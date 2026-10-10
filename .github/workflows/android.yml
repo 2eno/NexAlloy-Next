@@ -1,0 +1,80 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        submodules: true
+
+    - name: set up JDK
+      uses: actions/setup-java@v5
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Write key
+      if: github.event_name != 'pull_request'
+      run: |
+        if [ -z "${{ secrets.KEYSTORE }}" ]; then
+          echo "::warning::Signing secrets are missing, the release APK is not built. Add KEYSTORE (base64), KEYSTORE_PASSWORD, KEYSTORE_ALIAS and KEYSTORE_ALIAS_PASSWORD in Settings > Secrets and variables > Actions."
+          exit 0
+        fi
+        echo KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }} > signing.properties
+        echo KEYSTORE_ALIAS=${{ secrets.KEYSTORE_ALIAS }} >> signing.properties
+        echo KEYSTORE_ALIAS_PASSWORD='${{ secrets.KEYSTORE_ALIAS_PASSWORD }}' >> signing.properties
+        echo KEYSTORE_FILE=../key.jks >> signing.properties
+        echo ${{ secrets.KEYSTORE }} | base64 --decode > key.jks
+
+    - name: Unit tests
+      run: ./gradlew testDebugUnitTest
+
+    - name: Build module and patch bundles
+      run: ./gradlew :app:assembleDebug assembleBundle
+
+    - name: Build release module
+      if: hashFiles('signing.properties') != ''
+      run: ./gradlew :app:assembleRelease
+
+    - name: Upload module
+      uses: actions/upload-artifact@v7
+      with:
+        name: nexalloy-ci-debug-apk
+        path: app/build/outputs/apk/debug
+
+    - name: Upload patch bundles
+      uses: actions/upload-artifact@v7
+      with:
+        name: nexalloy-ci-bundles
+        path: bundles/*/build/outputs/bundle/*.nxb
+
+    - name: Create AutoBuild Release
+      if: github.event_name == 'push' && hashFiles('signing.properties') != ''
+      run: |
+        GIT_DESCRIBE=$(git rev-parse --short HEAD)
+        mkdir autobuild
+        cp app/build/outputs/apk/release/app-release.apk autobuild/NexAlloy-${GIT_DESCRIBE}.apk
+        cp bundles/*/build/outputs/bundle/*.nxb autobuild/
+        gh release delete autobuild --cleanup-tag --yes || true
+        gh release create autobuild autobuild/* \
+          --prerelease \
+          --target "${{ github.sha }}" \
+          --title "Nightly Build ${GIT_DESCRIBE}" \
+          --notes "Nightly build from commit ${GIT_DESCRIBE}. Patch sources with pre-releases enabled pick up its bundles."
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
