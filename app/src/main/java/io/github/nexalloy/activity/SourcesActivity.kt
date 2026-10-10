@@ -229,6 +229,7 @@ class SourcesActivity : Activity() {
             val manager = manager ?: return
             busy.add(source.id)
             refresh()
+            val before = manager.installed
             activity.runAsync({
                 val release = SourceClient.latestRelease(source)
                 val bundles = release.bundles.map { (_, url) ->
@@ -241,7 +242,7 @@ class SourcesActivity : Activity() {
                 result.onSuccess { (release, bundles) ->
                     releases[source.id] = Result.success(release)
                     toast(getString(R.string.bundles_installed, bundles.joinToString { "${it.name} ${it.version}" }))
-                    requestMissingScope()
+                    requestMissingScope(bundles.flatMap { newApps(it, before) })
                 }.onFailure { toast(getString(R.string.install_failed, it.message)) }
                 refresh()
             }
@@ -291,7 +292,7 @@ class SourcesActivity : Activity() {
                 .setMessage(details)
                 .setPositiveButton(if (bundle.enabled) R.string.action_disable else R.string.action_enable) { _, _ ->
                     manager.setEnabled(bundle, !bundle.enabled)
-                    if (!bundle.enabled) requestMissingScope()
+                    if (!bundle.enabled) requestMissingScope(bundle.apps.keys)
                     refresh()
                 }
                 .setNegativeButton(R.string.action_uninstall) { _, _ ->
@@ -313,21 +314,29 @@ class SourcesActivity : Activity() {
             val uri = data?.data ?: return
             val manager = manager ?: return
             val resolver = context.contentResolver
+            val before = manager.installed
             activity.runAsync({
                 resolver.openInputStream(uri)!!.use { manager.install(it, null) }
             }) { result ->
                 result.onSuccess {
                     toast(getString(R.string.bundles_installed, "${it.name} ${it.version}"))
-                    requestMissingScope()
+                    requestMissingScope(newApps(it, before))
                 }.onFailure { toast(getString(R.string.install_failed, it.message)) }
                 refresh()
             }
         }
 
+        /**
+         * Apps of [bundle] it did not patch before this install, so an update does not ask again
+         * for apps the user already declined.
+         */
+        private fun newApps(bundle: InstalledBundle, before: List<InstalledBundle>): Set<String> =
+            bundle.apps.keys - before.find { it.id == bundle.id }?.apps?.keys.orEmpty()
+
         /** Hooked apps only load bundles if the app is in the module scope. */
-        private fun requestMissingScope() {
+        private fun requestMissingScope(packages: Collection<String>) {
             val manager = manager ?: return
-            val missing = runCatching { manager.missingScope() }.getOrDefault(emptyList())
+            val missing = runCatching { manager.missingScope() }.getOrDefault(emptyList()).filter { it in packages }
             if (missing.isEmpty()) return
             manager.requestScope(missing) { message ->
                 activity?.runOnUiThread { toast(message); refresh() }

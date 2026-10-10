@@ -48,10 +48,8 @@ The module therefore keeps the whole patcher API, DexKit and the Kotlin stdlib (
 [proguard-rules.pro](app/proguard-rules.pro)), bundles exclude them, and a bundle must not declare classes in the
 module's packages (`io.github.nexalloy`, `io.github.nexalloy.morphe` and the module's own subpackages).
 
-LSPosed and Vector recommend only the apps listed in the APK's
-[scope.list](app/src/main/resources/META-INF/xposed/scope.list): NexAlloy itself and the apps of the preset patch
-source. Keep it in sync when NexAlloy-Next.2eno adds an app; apps of other sources are requested at install time but
-never shown as recommended.
+The APK's [scope.list](app/src/main/resources/META-INF/xposed/scope.list) only requests NexAlloy itself. The apps a
+bundle patches are requested when the bundle is installed (installed apps only, see `BundleManager.missingScope`).
 
 Patch toggles are stored in the per-app remote preferences under `<bundle id>/<patch name>`.
 
