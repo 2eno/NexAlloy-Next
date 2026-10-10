@@ -260,5 +260,6 @@ Bundles test their fingerprints against real APKs with
 
 Push a tag `X.Y.Z` (Z is the module's `versionCode`). The release workflow attaches the module APK and every bundle
 `.nxb` to a GitHub release, which is what the default patch source installs, and publishes the patcher API to the
-`maven` branch. Bump a bundle's `versionCode`/`versionName` when its patches change, and `PATCHER_API_VERSION` (with
+`maven` branch. Tags with a suffix (`X.Y.Z-alpha`) become pre-releases; without signing secrets, these are signed
+with a throwaway debug key. Bump a bundle's `versionCode`/`versionName` when its patches change, and `PATCHER_API_VERSION` (with
 `patcherApiVersion` in `gradle.properties`) when the patcher API gains something bundles may use.

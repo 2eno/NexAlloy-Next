@@ -51,9 +51,8 @@ android {
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             )
-            if (ksFile.exists()) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            // Without a keystore, release builds (e.g. CI pre-releases) are signed with the debug key.
+            signingConfig = signingConfigs.getByName(if (ksFile.exists()) "release" else "debug")
         }
     }
 

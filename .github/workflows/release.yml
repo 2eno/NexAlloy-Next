@@ -30,8 +30,14 @@ jobs:
     - name: Write key
       run: |
         if [ -z "${{ secrets.KEYSTORE }}" ]; then
-          echo "::error::Signing secrets are missing. Add KEYSTORE (base64), KEYSTORE_PASSWORD, KEYSTORE_ALIAS and KEYSTORE_ALIAS_PASSWORD in Settings > Secrets and variables > Actions."
-          exit 1
+          if [[ "${{ github.ref_name }}" != *-* ]]; then
+            echo "::error::Signing secrets are missing. Add KEYSTORE (base64), KEYSTORE_PASSWORD, KEYSTORE_ALIAS and KEYSTORE_ALIAS_PASSWORD in Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          # Pre-releases may go out signed with a throwaway debug key.
+          echo "::warning::Signing secrets are missing, the pre-release APK is signed with a debug key."
+          echo "DEBUG_SIGNED=true" >> "$GITHUB_ENV"
+          exit 0
         fi
         echo KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }} > signing.properties
         echo KEYSTORE_ALIAS=${{ secrets.KEYSTORE_ALIAS }} >> signing.properties
@@ -48,7 +54,15 @@ jobs:
         mkdir release
         cp app/build/outputs/apk/release/app-release.apk release/NexAlloy-${{ github.ref_name }}.apk
         cp bundles/*/build/outputs/bundle/*.nxb release/
-        gh release create ${{ github.ref_name }} release/* --title "${{ github.ref_name }}" --generate-notes
+        FLAGS=""
+        NOTES=""
+        # Tags like 3.0.1-alpha are pre-releases.
+        if [[ "${{ github.ref_name }}" == *-* ]]; then FLAGS="--prerelease"; fi
+        if [ "$DEBUG_SIGNED" = "true" ]; then
+          NOTES="> [!WARNING]
+        > This APK is signed with a throwaway debug key. Uninstall it before installing a later release."
+        fi
+        gh release create ${{ github.ref_name }} release/* $FLAGS --title "${{ github.ref_name }}" --notes "$NOTES" --generate-notes
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

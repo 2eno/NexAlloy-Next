@@ -27,7 +27,7 @@ Updates of installed sources are shown in **Patch sources**; tap a source to upd
 A patch source is one of:
 
 - **A GitHub repository** (`owner/repo` or `https://github.com/owner/repo`). NexAlloy installs every `.nxb` asset of
-  its latest release. Enable *Use pre-releases* to also consider pre-releases.
+  its latest release. Enable *Use pre-releases* to also consider pre-releases; sources without a stable release use their latest pre-release.
 - **A bundle JSON URL**, in the format of Morphe's `patches-bundle.json`:
   ```json
   { "version": "1.2.0", "download_url": "https://example.com/my-patches-1.2.0.nxb", "description": "Changelog" }

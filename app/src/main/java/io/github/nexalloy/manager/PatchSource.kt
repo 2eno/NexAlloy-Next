@@ -112,10 +112,15 @@ object SourceClient {
 
     private fun latestGitHubRelease(repository: String, prerelease: Boolean): SourceRelease {
         val releases = JSONArray(get("https://api.github.com/repos/$repository/releases?per_page=20"))
-        for (i in 0 until releases.length()) {
-            val release = releases.getJSONObject(i)
-            if (release.optBoolean("draft")) continue
-            if (release.optBoolean("prerelease") && !prerelease) continue
+        val candidates = (0 until releases.length()).map { releases.getJSONObject(it) }
+            .filter { !it.optBoolean("draft") }
+            .filter { it.getJSONArray("assets").let { assets ->
+                (0 until assets.length()).any { i -> assets.getJSONObject(i).getString("name").endsWith(BUNDLE_EXTENSION) }
+            } }
+        // Without a stable release, fall back to pre-releases, e.g. for projects still in alpha.
+        val allowPrerelease = prerelease || candidates.none { !it.optBoolean("prerelease") }
+        for (release in candidates) {
+            if (release.optBoolean("prerelease") && !allowPrerelease) continue
             val assets = release.getJSONArray("assets")
             val bundles = (0 until assets.length()).map { assets.getJSONObject(it) }
                 .filter { it.getString("name").endsWith(BUNDLE_EXTENSION) }
