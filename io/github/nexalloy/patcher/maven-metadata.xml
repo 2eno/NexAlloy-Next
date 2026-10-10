@@ -3,11 +3,11 @@
   <groupId>io.github.nexalloy</groupId>
   <artifactId>patcher</artifactId>
   <versioning>
-    <latest>1.0.0</latest>
-    <release>1.0.0</release>
+    <latest>1.1.0</latest>
+    <release>1.1.0</release>
     <versions>
-      <version>1.0.0</version>
+      <version>1.1.0</version>
     </versions>
-    <lastUpdated>20261010212235</lastUpdated>
+    <lastUpdated>20261010214107</lastUpdated>
   </versioning>
 </metadata>
