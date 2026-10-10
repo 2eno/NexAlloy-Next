@@ -1,0 +1,90 @@
+name: Android Release CI
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+  # Releases the selected ref under a new tag, e.g. when tags cannot be pushed.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag, X.Y.Z or X.Y.Z-suffix for a pre-release'
+        required: true
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        submodules: true
+
+    - name: set up JDK
+      uses: actions/setup-java@v5
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Write key
+      run: |
+        if [ -z "${{ secrets.KEYSTORE }}" ]; then
+          if [[ "${{ env.TAG }}" != *-* ]]; then
+            echo "::error::Signing secrets are missing. Add KEYSTORE (base64), KEYSTORE_PASSWORD, KEYSTORE_ALIAS and KEYSTORE_ALIAS_PASSWORD in Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          # Pre-releases may go out signed with a throwaway debug key.
+          echo "::warning::Signing secrets are missing, the pre-release APK is signed with a debug key."
+          echo "DEBUG_SIGNED=true" >> "$GITHUB_ENV"
+          exit 0
+        fi
+        echo KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }} > signing.properties
+        echo KEYSTORE_ALIAS=${{ secrets.KEYSTORE_ALIAS }} >> signing.properties
+        echo KEYSTORE_ALIAS_PASSWORD='${{ secrets.KEYSTORE_ALIAS_PASSWORD }}' >> signing.properties
+        echo KEYSTORE_FILE=../key.jks >> signing.properties
+        echo ${{ secrets.KEYSTORE }} | base64 --decode > key.jks
+
+    - name: Build module, patch bundles and patcher API
+      run: ./gradlew :app:assembleRelease assembleBundle :patcher:publishAllPublicationsToReleaseRepository
+
+    # The default patch source of NexAlloy installs every .nxb asset of the latest release.
+    - name: Create release
+      run: |
+        mkdir release
+        cp app/build/outputs/apk/release/app-release.apk release/NexAlloy-${{ env.TAG }}.apk
+        cp bundles/*/build/outputs/bundle/*.nxb release/
+        FLAGS=""
+        NOTES=""
+        # Tags like 3.0.1-alpha are pre-releases.
+        if [[ "${{ env.TAG }}" == *-* ]]; then FLAGS="--prerelease"; fi
+        if [ "$DEBUG_SIGNED" = "true" ]; then
+          NOTES="> [!WARNING]
+        > This APK is signed with a throwaway debug key. Uninstall it before installing a later release."
+        fi
+        gh release create ${{ env.TAG }} release/* $FLAGS --target "${{ github.sha }}" --title "${{ env.TAG }}" --notes "$NOTES" --generate-notes
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # External patch bundles compile against the patcher API from this Maven repository:
+    # https://raw.githubusercontent.com/<owner>/<repo>/maven
+    - name: Publish patcher API to the maven branch
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git fetch origin maven || true
+        git worktree add maven-repo origin/maven 2>/dev/null || { git worktree add --detach maven-repo && git -C maven-repo checkout --orphan maven && git -C maven-repo rm -rfq .; }
+        cp -r build/maven/. maven-repo/
+        cd maven-repo
+        git add -A
+        git commit -m "Publish patcher API from ${{ env.TAG }}" || exit 0
+        git push origin HEAD:maven
