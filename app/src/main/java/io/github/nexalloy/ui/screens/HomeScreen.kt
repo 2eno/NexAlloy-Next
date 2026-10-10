@@ -163,8 +163,9 @@ fun HomeContent(
                 AppCard(
                     appName = appName,
                     packageName = packageName,
+                    appIconColor = bundles.firstNotNullOfOrNull { it.appIconColors[packageName] },
                     recommendedVersion = bundles.firstNotNullOfOrNull { it.recommendedVersion(packageName) },
-                    bundles = bundles.joinToString { it.name },
+                    inScope = packageName !in state.missingScope,
                     onClick = { onOpenApp(packageName) },
                 )
             }

@@ -30,6 +30,8 @@ data class InstalledBundle(
     val resourcePackageId: Int = 0,
     /** Package name to the app versions the bundle was tested with, newest first. */
     val targets: Map<String, List<AppTarget>> = emptyMap(),
+    /** Package name to the brand color (0xRRGGBB) the bundle declares for the app. */
+    val appIconColors: Map<String, Int> = emptyMap(),
 ) {
     /** The version this bundle recommends for an app, or null for any version. */
     fun recommendedVersion(packageName: String): String? =
@@ -47,6 +49,7 @@ data class InstalledBundle(
         .put("sourceId", sourceId)
         .put("apps", JSONObject(apps))
         .put("resourcePackageId", resourcePackageId)
+        .put("appIconColors", JSONObject(appIconColors.mapValues { it.value }))
         .put("targets", JSONObject().apply {
             targets.forEach { (packageName, versions) ->
                 put(packageName, JSONArray().apply {
@@ -70,6 +73,9 @@ data class InstalledBundle(
                 apps.keys().asSequence().associateWith { apps.getString(it) }
             },
             resourcePackageId = json.optInt("resourcePackageId"),
+            appIconColors = json.optJSONObject("appIconColors")?.let { colors ->
+                colors.keys().asSequence().associateWith { colors.getInt(it) }
+            }.orEmpty(),
             targets = json.optJSONObject("targets")?.let { targets ->
                 targets.keys().asSequence().associateWith { packageName ->
                     val array = targets.getJSONArray(packageName)

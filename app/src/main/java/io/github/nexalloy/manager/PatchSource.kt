@@ -54,7 +54,7 @@ data class PatchSource(
         val default = PatchSource(
             id = "default",
             name = "NexAlloy Patches",
-            url = "2eno/NexAlloyNext.2eno-Patches",
+            url = "2eno/NexAlloyNext-Patches",
         )
     }
 }
@@ -97,7 +97,7 @@ class SourceStore(context: Context) {
 
     private companion object {
         const val KEY = "sources"
-        val FORMER_DEFAULT_URLS = setOf("2eno/NexAlloy-Next", "2eno/NexAlloy-Next.2eno")
+        val FORMER_DEFAULT_URLS = setOf("2eno/NexAlloy-Next", "2eno/NexAlloy-Next.2eno", "2eno/NexAlloyNext.2eno-Patches")
     }
 }
 

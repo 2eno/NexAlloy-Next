@@ -29,6 +29,8 @@
     <string name="recommended_any_version">Works with any version</string>
     <string name="installed_version">Installed: %s</string>
     <string name="chip_untested">Untested</string>
+    <string name="badge_not_in_scope">Not in scope</string>
+    <string name="badge_update">Update</string>
     <string name="no_bundles_title">No patches installed</string>
     <string name="no_bundles_text">Install patch bundles from a patch source to patch apps.</string>
     <string name="action_browse_sources">Browse patch sources</string>

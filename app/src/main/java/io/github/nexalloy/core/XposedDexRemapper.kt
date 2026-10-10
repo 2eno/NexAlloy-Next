@@ -32,6 +32,12 @@ class XposedDexRemapper(
 ) {
     val isNeeded get() = prefixes.isNotEmpty()
 
+    /** Prefixes of the renamed class names, e.g. `de.robv.android.xposed.` as the framework renamed it. */
+    val renamedClassPrefixes: List<String> get() = prefixes.values.map { it.substring(1).replace('/', '.') }
+
+    /** Longest first, so a more specific renaming wins. */
+    private val orderedPrefixes = prefixes.entries.sortedByDescending { it.key.length }
+
     /** Stable key of the renaming, for naming cached files. */
     val key: String get() = prefixes.entries.joinToString("|").hashCode().toUInt().toString(16)
 
@@ -67,7 +73,7 @@ class XposedDexRemapper(
     private fun rename(type: String): String {
         val arrayDepth = type.indexOfFirst { it != '[' }
         val element = type.substring(arrayDepth)
-        for ((from, to) in prefixes) {
+        for ((from, to) in orderedPrefixes) {
             if (element.startsWith(from)) return type.substring(0, arrayDepth) + to + element.substring(from.length)
         }
         return type
@@ -104,15 +110,21 @@ class XposedDexRemapper(
          *
          * Each pair is an API class as referenced in the module and its original name.
          */
-        fun detect(vararg anchors: Pair<Class<*>, String>): XposedDexRemapper {
+        fun detect(vararg anchors: Pair<Class<*>, String>): XposedDexRemapper =
+            fromNames(anchors.map { (clazz, originalName) -> clazz.name to originalName })
+
+        /** Like [detect], with each pair being the actual and the original name of an API class. */
+        fun fromNames(names: List<Pair<String, String>>): XposedDexRemapper {
             val prefixes = mutableMapOf<String, String>()
-            for ((clazz, originalName) in anchors) {
-                val actualName = clazz.name
-                if (actualName == originalName) continue
-                val originalPackage = originalName.substringBeforeLast('.')
-                val actualPackage = actualName.substringBeforeLast('.')
-                if (originalName.substringAfterLast('.') != actualName.substringAfterLast('.')) continue
-                prefixes["L${originalPackage.replace('.', '/')}/"] = "L${actualPackage.replace('.', '/')}/"
+            for ((actualName, originalName) in names) {
+                val original = "L" + originalName.replace('.', '/')
+                val actual = "L" + actualName.replace('.', '/')
+                // The framework replaces a prefix with a random one of the same length. The prefix need not end at
+                // a package, Vector renames `Lio/github/libxposed/api/Xposed` for example, so the renamed part is
+                // everything up to the last character that differs.
+                if (original == actual || original.length != actual.length) continue
+                val end = original.indices.last { original[it] != actual[it] } + 1
+                prefixes[original.substring(0, end)] = actual.substring(0, end)
             }
             return XposedDexRemapper(prefixes)
         }

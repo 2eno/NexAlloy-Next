@@ -98,8 +98,31 @@ class XposedDexRemapperTest {
     @Test
     fun detect() {
         assertFalse(XposedDexRemapper.detect(String::class.java to "java.lang.String").isNeeded)
-        val detected = XposedDexRemapper.detect(String::class.java to "de.robv.android.xposed.String")
-        assertTrue(detected.isNeeded)
+        assertFalse(XposedDexRemapper.detect(String::class.java to "de.robv.android.xposed.String").isNeeded)
+    }
+
+    /** Vector renames `Lio/github/libxposed/api/Xposed`, part of the class names, and may put slashes anywhere. */
+    @Test
+    fun detectsPrefixesWithinClassNames() {
+        val detected = XposedDexRemapper.fromNames(
+            listOf(
+                "JqVep.oVJD.PFvPIBOUUCL.XposedBridge" to "de.robv.android.xposed.XposedBridge",
+                "pLIi.MEOLeMaE.JomTEIJ.zOjoOjHyInterface" to "io.github.libxposed.api.XposedInterface",
+            )
+        )
+        assertEquals(
+            setOf("JqVep.oVJD.PFvPIBOUUCL", "pLIi.MEOLeMaE.JomTEIJ.zOjoOjHy"),
+            detected.renamedClassPrefixes.toSet()
+        )
+        val dir = createTempDirectory().toFile()
+        val out = File(dir, "remapped.dex")
+        assertTrue(detected.remap(apk(dir), out))
+        val dex = DexBackedDexFile(Opcodes.getDefault(), Files.readAllBytes(out.toPath()))
+        val hook = dex.classes.single().methods.single { it.name == "hook" }
+        assertEquals(
+            listOf("LJqVep/oVJD/PFvPIBOUUCL/XC_MethodHook\$MethodHookParam;"),
+            hook.parameterTypes.map { it.toString() }
+        )
     }
 
     /** Run with -Dbundle=/path/to/bundle.nxb to measure a real bundle. */

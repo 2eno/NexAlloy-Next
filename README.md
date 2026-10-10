@@ -38,7 +38,7 @@ You can also import a `.nxb` file from storage.
 
 ## Patch bundles
 
-The preset *NexAlloy Patches* source is [NexAlloyNext.2eno-Patches](https://github.com/2eno/NexAlloyNext.2eno-Patches), which
+The preset *NexAlloy Patches* source is [NexAlloyNext-Patches](https://github.com/2eno/NexAlloyNext-Patches), which
 provides the NexAlloy Patches and 2eno Patches bundles. See there for the patched apps.
 
 ### Your own bundle
@@ -50,4 +50,5 @@ Publish `.nxb` files as release assets, and users can add your repository as a p
 
 [NexAlloy](https://github.com/NexAlloy/NexAlloy): the LSPosed module this project is rebuilt from, by ChsBuffer  
 [DexKit](https://luckypray.org/DexKit/en/): a high-performance dex runtime parsing library  
-[Morphe Patcher](https://github.com/MorpheApp/morphe-patcher): the fingerprint API the patcher API is modeled after
+[Morphe Patcher](https://github.com/MorpheApp/morphe-patcher): the fingerprint API the patcher API is modeled after  
+[Morphe Manager](https://github.com/MorpheApp/morphe-manager): the design of the app cards

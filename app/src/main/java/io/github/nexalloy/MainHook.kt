@@ -117,7 +117,8 @@ class MainHook : XposedModule() {
     private val bundleParentClassLoader by lazy {
         BundleParentClassLoader(
             MainHook::class.java.classLoader!!,
-            listOf(XposedBridge::class.java, XposedInterface::class.java).map { it.name.substringBeforeLast('.') },
+            listOf(XposedBridge::class.java, XposedInterface::class.java).map { it.name.substringBeforeLast('.') + "." } +
+                remapper.renamedClassPrefixes,
         )
     }
 

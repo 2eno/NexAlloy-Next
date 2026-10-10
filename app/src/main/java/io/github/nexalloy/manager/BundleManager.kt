@@ -85,6 +85,7 @@ class BundleManager(private val context: Context, private val service: XposedSer
                 apps = apps.associate { it.packageName to it.appName },
                 resourcePackageId = manifest.resourcePackageId,
                 targets = apps.filter { it.targets.isNotEmpty() }.associate { it.packageName to it.targets },
+                appIconColors = apps.mapNotNull { app -> app.appIconColor?.let { app.packageName to it } }.toMap(),
             )
             BundleRegistry.write(registryPrefs, installed.filter { it.id != bundle.id } + bundle)
             if (previous != null && previous.fileName != fileName) deleteFiles(previous.fileName)

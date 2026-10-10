@@ -87,7 +87,8 @@ class InvalidBundleException(message: String, cause: Throwable? = null) : Except
  */
 class BundleParentClassLoader(
     private val module: ClassLoader,
-    extraSharedPackages: Collection<String> = emptyList(),
+    /** Further class name prefixes to share, such as the Xposed API as the framework renamed it. */
+    extraSharedPrefixes: Collection<String> = emptyList(),
 ) : ClassLoader(Context::class.java.classLoader) {
     private val sharedPrefixes = listOf(
         "kotlin.",
@@ -97,7 +98,7 @@ class BundleParentClassLoader(
         "androidx.annotation.",
         "de.robv.android.xposed.",
         "io.github.libxposed.",
-    ) + extraSharedPackages.map { "$it." }
+    ) + extraSharedPrefixes
 
     override fun loadClass(name: String, resolve: Boolean): Class<*> {
         if (sharedPrefixes.any { name.startsWith(it) }) return module.loadClass(name)
