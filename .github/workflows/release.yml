@@ -4,6 +4,15 @@ on:
   push:
     tags:
       - '*.*.*'
+  # Releases the selected ref under a new tag, e.g. when tags cannot be pushed.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag, X.Y.Z or X.Y.Z-suffix for a pre-release'
+        required: true
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
 
 jobs:
   build:
@@ -30,7 +39,7 @@ jobs:
     - name: Write key
       run: |
         if [ -z "${{ secrets.KEYSTORE }}" ]; then
-          if [[ "${{ github.ref_name }}" != *-* ]]; then
+          if [[ "${{ env.TAG }}" != *-* ]]; then
             echo "::error::Signing secrets are missing. Add KEYSTORE (base64), KEYSTORE_PASSWORD, KEYSTORE_ALIAS and KEYSTORE_ALIAS_PASSWORD in Settings > Secrets and variables > Actions."
             exit 1
           fi
@@ -52,17 +61,17 @@ jobs:
     - name: Create release
       run: |
         mkdir release
-        cp app/build/outputs/apk/release/app-release.apk release/NexAlloy-${{ github.ref_name }}.apk
+        cp app/build/outputs/apk/release/app-release.apk release/NexAlloy-${{ env.TAG }}.apk
         cp bundles/*/build/outputs/bundle/*.nxb release/
         FLAGS=""
         NOTES=""
         # Tags like 3.0.1-alpha are pre-releases.
-        if [[ "${{ github.ref_name }}" == *-* ]]; then FLAGS="--prerelease"; fi
+        if [[ "${{ env.TAG }}" == *-* ]]; then FLAGS="--prerelease"; fi
         if [ "$DEBUG_SIGNED" = "true" ]; then
           NOTES="> [!WARNING]
         > This APK is signed with a throwaway debug key. Uninstall it before installing a later release."
         fi
-        gh release create ${{ github.ref_name }} release/* $FLAGS --title "${{ github.ref_name }}" --notes "$NOTES" --generate-notes
+        gh release create ${{ env.TAG }} release/* $FLAGS --target "${{ github.sha }}" --title "${{ env.TAG }}" --notes "$NOTES" --generate-notes
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -77,5 +86,5 @@ jobs:
         cp -r build/maven/. maven-repo/
         cd maven-repo
         git add -A
-        git commit -m "Publish patcher API from ${{ github.ref_name }}" || exit 0
+        git commit -m "Publish patcher API from ${{ env.TAG }}" || exit 0
         git push origin HEAD:maven
