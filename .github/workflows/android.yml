@@ -15,8 +15,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v6
-      with:
-        submodules: true
 
     - name: set up JDK
       uses: actions/setup-java@v5
@@ -44,8 +42,8 @@ jobs:
     - name: Unit tests
       run: ./gradlew testDebugUnitTest
 
-    - name: Build module and patch bundles
-      run: ./gradlew :app:assembleDebug assembleBundle
+    - name: Build module
+      run: ./gradlew :app:assembleDebug
 
     - name: Build release module
       if: hashFiles('signing.properties') != ''
@@ -57,24 +55,17 @@ jobs:
         name: nexalloy-ci-debug-apk
         path: app/build/outputs/apk/debug
 
-    - name: Upload patch bundles
-      uses: actions/upload-artifact@v7
-      with:
-        name: nexalloy-ci-bundles
-        path: bundles/*/build/outputs/bundle/*.nxb
-
     - name: Create AutoBuild Release
       if: github.event_name == 'push' && hashFiles('signing.properties') != ''
       run: |
         GIT_DESCRIBE=$(git rev-parse --short HEAD)
         mkdir autobuild
         cp app/build/outputs/apk/release/app-release.apk autobuild/NexAlloy-${GIT_DESCRIBE}.apk
-        cp bundles/*/build/outputs/bundle/*.nxb autobuild/
         gh release delete autobuild --cleanup-tag --yes || true
         gh release create autobuild autobuild/* \
           --prerelease \
           --target "${{ github.sha }}" \
           --title "Nightly Build ${GIT_DESCRIBE}" \
-          --notes "Nightly build from commit ${GIT_DESCRIBE}. Patch sources with pre-releases enabled pick up its bundles."
+          --notes "Nightly build from commit ${GIT_DESCRIBE}."
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

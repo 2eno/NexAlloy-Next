@@ -3,31 +3,10 @@
     <PreferenceScreen android:title="@string/open_source_license">
         <Preference
             android:summary="GNU General Public License v3.0"
-            android:title="Morphe Patches">
-            <intent
-                android:action="android.intent.action.VIEW"
-                android:data="https://github.com/MorpheApp/morphe-patches" />
-        </Preference>
-        <Preference
-            android:summary="GNU General Public License v3.0"
-            android:title="hoodles Morphe Patches">
-            <intent
-                android:action="android.intent.action.VIEW"
-                android:data="https://github.com/hoo-dles/morphe-patches" />
-        </Preference>
-        <Preference
-            android:summary="GNU General Public License v3.0"
             android:title="Morphe Patcher">
             <intent
                 android:action="android.intent.action.VIEW"
                 android:data="https://github.com/MorpheApp/morphe-patcher" />
-        </Preference>
-        <Preference
-            android:summary="GNU General Public License v3.0"
-            android:title="ReVanced Patches">
-            <intent
-                android:action="android.intent.action.VIEW"
-                android:data="https://github.com/revanced/revanced-patches" />
         </Preference>
         <Preference
             android:summary="LGPL-3.0 license, LuckyPray"

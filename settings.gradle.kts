@@ -40,8 +40,3 @@ rootProject.name = "NexAlloy-Next"
 include(":app")
 // The API patch bundles are compiled against.
 include(":patcher")
-
-// Patch bundles released alongside the module.
-include(":stub")
-include(":bundles:nexalloy")
-include(":bundles:2eno")

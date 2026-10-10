@@ -2,18 +2,14 @@
 
 ## Architecture
 
-NexAlloy is split into a module and patch bundles, like Morphe Manager and Morphe patch sources:
+NexAlloy is split into a module and patch bundles, like Morphe Manager and Morphe patch sources. This repository
+holds the module; the bundles NexAlloy presets live in [NexAlloy-Next.2eno](https://github.com/2eno/NexAlloy-Next.2eno).
 
 ```text
 📦 NexAlloy-Next
  ├ app/            The LSPosed module: loads bundles into apps, manages patch sources (the "manager")
  ├ patcher/        The patcher API bundles compile against: patch(), fingerprints, hook helpers
  ├ build-logic/    The nexalloy.bundle Gradle plugin that builds a bundle
- ├ bundles/
- │  ├ nexalloy/    NexAlloy Patches: Morphe, ReVanced, Piko and hoodles patches
- │  ├ 2eno/        2eno Patches: extension code from the 2eno-patches submodule
- │  └ testing/     Fingerprint test harness shared by the bundles
- ├ stub/           Stubs of YouTube classes used by the Morphe extensions
  └ template/       Standalone template for patch bundles in other repositories
 ```
 
@@ -52,7 +48,8 @@ Patch toggles are stored in the per-app remote preferences under `<bundle id>/<p
 
 ## Writing a patch bundle
 
-Copy the [template](template) into a new repository, or add a module under `bundles/` here.
+Copy the [template](template) into a new repository. [NexAlloy-Next.2eno](https://github.com/2eno/NexAlloy-Next.2eno)
+is a larger example with two bundles, shared extension code and fingerprint tests.
 
 ### Bundle module
 
@@ -78,7 +75,7 @@ nexalloyBundle {
 }
 
 dependencies {
-    compileOnly("io.github.nexalloy:patcher:1.0.0") // or project(":patcher") in this repository
+    compileOnly("io.github.nexalloy:patcher:1.0.0")
 }
 ```
 
@@ -235,31 +232,9 @@ The [FingerprintCompat.kt](patcher/src/main/java/io/github/nexalloy/morphe/Finge
     }
     ```
 
-### Extension code
-
-As per ReVanced Patcher documentation:
-> Instead of involving many abstract changes in one patch or writing entire methods or classes in a patch, you can write code in extensions.
-
-The NexAlloy Patches bundle compiles the extensions of the `morphe-patches` and `morphe-patches-library` submodules
-(NexAlloy forks), the 2eno Patches bundle those of the `2eno-patches` submodule. Fix shared 2eno logic in
-[2eno-patches](https://github.com/2eno/2eno-patches), so both the Morphe patches and the Xposed hooks get it.
-Dependabot bumps that submodule to the latest commit of its `main` branch.
-
-## Unit Testing
-
-Bundles test their fingerprints against real APKs with
-[FingerprintsKtTest.kt](bundles/testing/java/io/github/nexalloy/FingerprintsKtTest.kt). Place APKs into the bundle's
-`binaries/` directory (e.g. `bundles/nexalloy/binaries/`), prefixed with their package name
-(e.g. `com.google.android.youtube-20.10.38.apk`), and list the app in the bundle's `FingerprintTestTargets.kt`.
-
-```sh
-./gradlew testDebugUnitTest
-```
-
 ## Releasing
 
-Push a tag `X.Y.Z` (Z is the module's `versionCode`). The release workflow attaches the module APK and every bundle
-`.nxb` to a GitHub release, which is what the default patch source installs, and publishes the patcher API to the
-`maven` branch. Tags with a suffix (`X.Y.Z-alpha`) become pre-releases; without signing secrets, these are signed
-with a throwaway debug key. Bump a bundle's `versionCode`/`versionName` when its patches change, and `PATCHER_API_VERSION` (with
-`patcherApiVersion` in `gradle.properties`) when the patcher API gains something bundles may use.
+Push a tag `X.Y.Z` (Z is the module's `versionCode`), or `X.Y.Z-suffix` for a pre-release, or run the Release workflow
+with a tag name. It attaches the module APK to a GitHub release and publishes the patcher API to the `maven` branch.
+Without signing secrets, pre-releases are signed with a throwaway debug key. Bump `PATCHER_API_VERSION` (with
+`patcherApiVersion` in `gradle.properties`) and `patcherVersion` when the patcher API gains something bundles may use.

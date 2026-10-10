@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">NexAlloy</string>
-    <string name="app_description">LSPosed module that applies patch bundles from Morphe-style patch sources.</string>
+    <string name="app_description">LSPosed module that applies patch bundles from patch sources.</string>
     <string name="check_for_update_title">Check for update</string>
     <string name="patch_selection">Patch Selection</string>
     <string name="force_stop_to_apply_summary">Force stop the corresponding application to apply the settings.</string>
@@ -12,7 +12,7 @@
     <string name="module_active_title">Module is active</string>
     <string name="module_inactive_title">Module is not active</string>
     <string name="module_inactive_summary">Enable NexAlloy in LSPosed, keep NexAlloy itself in its scope, then restart NexAlloy.</string>
-    <string name="slogan_summary">LSPosed module powered by Morphe, ReVanced, and beyond. Patches come from patch bundles that you install from patch sources.\n\nThis is not an official Morphe or ReVanced project, do not ask their developers for help.</string>
+    <string name="slogan_summary">LSPosed module that applies patch bundles from patch sources. Patch bundles run code inside the apps they patch: only add patch sources you trust.</string>
 
     <string name="patch_sources_title">Patch sources</string>
     <string name="patch_sources_summary">Patch sources provide patch bundles, like the patch sources of Morphe. A source is a GitHub repository whose releases contain .nxb bundles, or the URL of a bundle JSON file.</string>

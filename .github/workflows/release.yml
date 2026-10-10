@@ -23,8 +23,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v6
-      with:
-        submodules: true
 
     - name: set up JDK
       uses: actions/setup-java@v5
@@ -54,15 +52,13 @@ jobs:
         echo KEYSTORE_FILE=../key.jks >> signing.properties
         echo ${{ secrets.KEYSTORE }} | base64 --decode > key.jks
 
-    - name: Build module, patch bundles and patcher API
-      run: ./gradlew :app:assembleRelease assembleBundle :patcher:publishAllPublicationsToReleaseRepository
+    - name: Build module and patcher API
+      run: ./gradlew :app:assembleRelease :patcher:publishAllPublicationsToReleaseRepository
 
-    # The default patch source of NexAlloy installs every .nxb asset of the latest release.
     - name: Create release
       run: |
         mkdir release
         cp app/build/outputs/apk/release/app-release.apk release/NexAlloy-${{ env.TAG }}.apk
-        cp bundles/*/build/outputs/bundle/*.nxb release/
         FLAGS=""
         NOTES=""
         # Tags like 3.0.1-alpha are pre-releases.

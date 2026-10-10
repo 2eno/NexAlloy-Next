@@ -103,11 +103,19 @@ class BundleManager(private val context: Context, private val service: XposedSer
         })
     }
 
-    /** Packages patched by enabled bundles that are not yet in the module scope. */
+    /**
+     * Installed apps patched by enabled bundles that are not yet in the module scope.
+     *
+     * Apps that are not installed are left out: the framework asks the user about every requested package.
+     */
     fun missingScope(): List<String> {
         val scope = runCatching { service.scope.toSet() }.getOrDefault(emptySet())
-        return installed.filter { it.enabled }.flatMap { it.apps.keys }.distinct().filter { it !in scope }
+        return installed.filter { it.enabled }.flatMap { it.apps.keys }.distinct()
+            .filter { it !in scope && isInstalled(it) }
     }
+
+    private fun isInstalled(packageName: String) =
+        runCatching { context.packageManager.getPackageInfo(packageName, 0) }.isSuccess
 
     fun requestScope(packages: List<String>, onResult: (String) -> Unit) {
         service.requestScope(packages, object : XposedService.OnScopeEventListener {

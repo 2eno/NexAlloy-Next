@@ -50,11 +50,11 @@ data class PatchSource(
         fun create(name: String, url: String, prerelease: Boolean = false) =
             PatchSource(UUID.randomUUID().toString(), name, url.trim(), prerelease)
 
-        /** The bundles released alongside NexAlloy. */
+        /** The NexAlloy Patches and 2eno Patches bundles. */
         val default = PatchSource(
             id = "default",
             name = "NexAlloy Patches",
-            url = BuildConfig.UPDATE_REPOSITORY,
+            url = "2eno/NexAlloy-Next.2eno",
         )
     }
 }
@@ -76,7 +76,10 @@ class SourceStore(context: Context) {
         val raw = prefs.getString(KEY, null) ?: return listOf(PatchSource.default)
         return runCatching {
             val array = JSONArray(raw)
-            (0 until array.length()).map { PatchSource.fromJson(array.getJSONObject(it)) }
+            (0 until array.length()).map { PatchSource.fromJson(array.getJSONObject(it)) }.map {
+                // The default source moved from the NexAlloy repository to its own.
+                if (it.id == PatchSource.default.id && it.url == "2eno/NexAlloy-Next") it.copy(url = PatchSource.default.url) else it
+            }
         }.getOrDefault(listOf(PatchSource.default))
     }
 
