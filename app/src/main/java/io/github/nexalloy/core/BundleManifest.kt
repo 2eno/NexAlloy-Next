@@ -1,5 +1,6 @@
 package io.github.nexalloy.core
 
+import android.content.Context
 import android.content.pm.PackageInfo
 import dalvik.system.DexClassLoader
 import android.content.pm.PackageManager
@@ -79,12 +80,47 @@ class BundleManifest(
 
 class InvalidBundleException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
+/**
+ * Gives bundles access to the classes NexAlloy shares with them: the patcher API and what it exposes.
+ *
+ * Everything else comes from the framework, so libraries NexAlloy uses internally never shadow a bundle's own copies.
+ */
+class BundleParentClassLoader(
+    private val module: ClassLoader,
+    extraSharedPackages: Collection<String> = emptyList(),
+) : ClassLoader(Context::class.java.classLoader) {
+    private val sharedPrefixes = listOf(
+        "kotlin.",
+        "io.github.nexalloy.",
+        "org.luckypray.dexkit.",
+        "com.google.flatbuffers.",
+        "androidx.annotation.",
+        "de.robv.android.xposed.",
+        "io.github.libxposed.",
+    ) + extraSharedPackages.map { "$it." }
+
+    override fun loadClass(name: String, resolve: Boolean): Class<*> {
+        if (sharedPrefixes.any { name.startsWith(it) }) return module.loadClass(name)
+        return super.loadClass(name, resolve)
+    }
+}
+
 /** Loads the code of a bundle APK and instantiates its [PatchBundle]. */
 object BundleClassLoader {
-    fun load(apk: File, entryClass: String, parent: ClassLoader): Pair<ClassLoader, List<AppPatchInfo>> {
+    /**
+     * @param prependedDex Dex file whose classes take precedence over the APK's, see [XposedDexRemapper].
+     */
+    fun load(
+        apk: File,
+        entryClass: String,
+        parent: ClassLoader,
+        prependedDex: File? = null,
+    ): Pair<ClassLoader, List<AppPatchInfo>> {
         // Android 14+ refuses to load writable dex files.
         apk.setReadOnly()
-        val loader = DexClassLoader(apk.path, null, null, parent)
+        prependedDex?.setReadOnly()
+        val path = listOfNotNull(prependedDex, apk).joinToString(File.pathSeparator) { it.path }
+        val loader = DexClassLoader(path, null, null, parent)
         val entry = try {
             val clazz = loader.loadClass(entryClass)
             // A Kotlin object exposes its instance as INSTANCE.

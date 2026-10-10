@@ -35,6 +35,10 @@ The package name is the bundle id, the application label its name and `versionNa
 2. When a scoped app starts, [MainHook.kt](app/src/main/java/io/github/nexalloy/MainHook.kt) reads that list, copies
    the bundles for the app from the remote files into the app's code cache, and loads them with a `DexClassLoader`
    whose parent is the module's class loader.
+   Frameworks like LSPosed and Vector rename the Xposed API packages and rewrite only the module's own code. NexAlloy
+   detects the renaming from its own classes and rewrites the bundle classes that use the API into a separate dex
+   ([XposedDexRemapper.kt](app/src/main/java/io/github/nexalloy/core/XposedDexRemapper.kt)), cached per renaming.
+   The bundle's class loader only sees the module's shared packages (patcher API, DexKit, Kotlin stdlib, Xposed APIs).
 3. Each bundle's resources are registered with `BundleResources`, then
    [PatchSession](patcher/src/main/java/io/github/nexalloy/PatchSession.kt) runs the enabled patches of each bundle
    with its own DexKit cache.

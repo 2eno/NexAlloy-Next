@@ -3,6 +3,7 @@ package io.github.nexalloy
 import android.app.Application
 import android.widget.Toast
 import de.robv.android.xposed.XC_MethodReplacement
+import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
@@ -10,9 +11,11 @@ import io.github.libxposed.api.XposedModuleInterface.PackageReadyParam
 import io.github.nexalloy.core.BuildConfig
 import io.github.nexalloy.core.BundleClassLoader
 import io.github.nexalloy.core.BundleManifest
+import io.github.nexalloy.core.BundleParentClassLoader
 import io.github.nexalloy.core.BundleRegistry
 import io.github.nexalloy.core.InstalledBundle
 import io.github.nexalloy.core.ModuleStatus
+import io.github.nexalloy.core.XposedDexRemapper
 import io.github.nexalloy.morphe.ResourceFinder
 import io.github.nexalloy.morphe.resourceMappings
 import java.io.File
@@ -75,7 +78,8 @@ class MainHook : XposedModule() {
     ): Pair<BundleInfo, Array<Patch>> {
         val dir = File(app.codeCacheDir, "nexalloy").apply { mkdirs() }
         dir.listFiles()?.forEach { file ->
-            if (activeBundles.none { it.fileName == file.name }) file.delete()
+            // Bundle APKs and the dex files remapped from them start with the bundle's file name.
+            if (activeBundles.none { file.name.startsWith(it.fileName) } || file.name.endsWith(".tmp")) file.delete()
         }
 
         val apk = File(dir, bundle.fileName)
@@ -90,10 +94,46 @@ class MainHook : XposedModule() {
         }
 
         val manifest = BundleManifest.read(app.packageManager, apk)
-        val (classLoader, apps) = BundleClassLoader.load(apk, manifest.entryClass, MainHook::class.java.classLoader!!)
+        val (classLoader, apps) = BundleClassLoader.load(
+            apk, manifest.entryClass, bundleParentClassLoader, remappedDex(dir, apk)
+        )
         val patches = apps.filter { it.packageName == app.packageName }
             .flatMap { it.patches.asList() }.toTypedArray()
         return BundleInfo(manifest.id, manifest.name, manifest.version, apk.path, classLoader) to patches
+    }
+
+    /**
+     * The framework may rename the Xposed API, see [XposedDexRemapper]. Detected from this module's own code,
+     * which the framework rewrote. The original names are assembled at runtime so the framework cannot rewrite them.
+     */
+    private val remapper by lazy {
+        fun name(vararg parts: String) = parts.joinToString(".")
+        XposedDexRemapper.detect(
+            XposedBridge::class.java to name("de", "robv", "android", "xposed", "XposedBridge"),
+            XposedInterface::class.java to name("io", "github", "libxposed", "api", "XposedInterface"),
+        )
+    }
+
+    private val bundleParentClassLoader by lazy {
+        BundleParentClassLoader(
+            MainHook::class.java.classLoader!!,
+            listOf(XposedBridge::class.java, XposedInterface::class.java).map { it.name.substringBeforeLast('.') },
+        )
+    }
+
+    /** The bundle's classes using the renamed Xposed API, rewritten to match it, or null if none need it. */
+    private fun remappedDex(dir: File, apk: File): File? {
+        if (!remapper.isNeeded) return null
+        val dex = File(dir, "${apk.name}-${remapper.key}.dex")
+        // Marks bundles without classes to remap, so they are not scanned again.
+        val none = File(dir, "${apk.name}-${remapper.key}.none")
+        if (dex.exists()) return dex
+        if (none.exists()) return null
+        val time = System.currentTimeMillis()
+        val remapped = remapper.remap(apk, dex)
+        PatcherLog.info { "Remapped the Xposed API in ${apk.name} in ${System.currentTimeMillis() - time}ms" }
+        if (!remapped) none.createNewFile()
+        return dex.takeIf { remapped }
     }
 
     /** Tells NexAlloy's own app that the module is active, see [ModuleStatus]. */

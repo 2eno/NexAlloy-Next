@@ -1,4 +1,5 @@
 [versions]
+dexlib2 = "3.0.9"
 agp = "9.2.1"
 dexkit = "2.3.0"
 xposed = "82"
@@ -20,6 +21,7 @@ lang3 = "3.20.0"
 
 
 [libraries]
+dexlib2 = { group = "com.android.tools.smali", name = "smali-dexlib2", version.ref = "dexlib2" }
 dexkit = { group = "org.luckypray", name = "dexkit", version.ref = "dexkit" }
 xposed = { group = "de.robv.android.xposed", name = "api", version.ref = "xposed" }
 libxposed-api = {group = "io.github.libxposed", name = "api", version.ref = "libxposed"}

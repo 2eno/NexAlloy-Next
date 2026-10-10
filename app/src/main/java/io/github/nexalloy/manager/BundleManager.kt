@@ -5,6 +5,7 @@ import io.github.libxposed.service.XposedService
 import io.github.nexalloy.AppPatchInfo
 import io.github.nexalloy.core.BundleClassLoader
 import io.github.nexalloy.core.BundleManifest
+import io.github.nexalloy.core.BundleParentClassLoader
 import io.github.nexalloy.core.BundleRegistry
 import io.github.nexalloy.core.InstalledBundle
 import io.github.nexalloy.core.InvalidBundleException
@@ -143,7 +144,7 @@ class BundleManager(private val context: Context, private val service: XposedSer
 
     private fun loadApps(apk: File, entryClass: String): List<AppPatchInfo> =
         loadedApps.getOrPut(apk.name) {
-            BundleClassLoader.load(apk, entryClass, BundleManager::class.java.classLoader!!).second
+            BundleClassLoader.load(apk, entryClass, BundleParentClassLoader(BundleManager::class.java.classLoader!!)).second
         }
 
     private fun deleteFiles(fileName: String) {

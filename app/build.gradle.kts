@@ -19,7 +19,7 @@ android {
 
     defaultConfig {
         applicationId = "io.github.nexalloy.next"
-        versionCode = 2
+        versionCode = 3
         versionName = "3.0.$versionCode"
         buildConfigField("String", "COMMIT_HASH", "\"${gitCommitHashProvider.get()}\"")
         buildConfigField("long", "COMMIT_DATE", "${gitCommitDateProvider.get()}L")
@@ -93,10 +93,13 @@ dependencies {
     compileOnly(libs.xposed)
     compileOnly(libs.libxposed.api)
     implementation(libs.libxposed.service)
+    // Rewrites bundle code for frameworks that rename the Xposed API.
+    implementation(libs.dexlib2)
 }
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    providers.systemProperty("bundle").orNull?.let { systemProperty("bundle", it) }
 }
 
 dependencies {
