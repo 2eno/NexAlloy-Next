@@ -7,7 +7,7 @@ package io.github.nexalloy
  * to load a bundle built against a newer API than the one it ships. Bump it whenever the API gains
  * something bundles may depend on, and treat removals as breaking changes.
  */
-const val PATCHER_API_VERSION = 3
+const val PATCHER_API_VERSION = 1
 
 /**
  * An app version the patches were tested with, like Morphe's `AppTarget`.
@@ -20,9 +20,9 @@ class AppTarget @JvmOverloads constructor(val version: String, val experimental:
  * The patches a bundle provides for one app.
  *
  * @param targets App versions the patches were tested with, newest first. NexAlloyNext recommends the newest one
- *   that is not experimental. Empty if the patches work with any version. Since patcher API 2.
+ *   that is not experimental. Empty if the patches work with any version.
  * @param appIconColor Brand color of the app as 0xRRGGBB, like Morphe's `appIconColor`; the app's card starts with
- *   it. Null for the default card colors. Since patcher API 3.
+ *   it. Null for the default card colors.
  */
 class AppPatchInfo @JvmOverloads constructor(
     val appName: String,

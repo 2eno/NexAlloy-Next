@@ -10,6 +10,9 @@ on:
       tag:
         description: 'Release tag, X.Y.Z or X.Y.Z-suffix for a pre-release'
         required: true
+      delete:
+        description: 'Also delete the releases and tags whose tag contains this text, e.g. -alpha'
+        required: false
 
 env:
   TAG: ${{ inputs.tag || github.ref_name }}
@@ -61,7 +64,7 @@ jobs:
         cp app/build/outputs/apk/release/app-release.apk release/NexAlloyNext-${{ env.TAG }}.apk
         FLAGS=""
         NOTES=""
-        # Tags like 3.0.1-alpha are pre-releases.
+        # Tags like 3.1.10-beta are pre-releases.
         if [[ "${{ env.TAG }}" == *-* ]]; then FLAGS="--prerelease"; fi
         if [ "$DEBUG_SIGNED" = "true" ]; then
           NOTES="> [!WARNING]
@@ -84,3 +87,14 @@ jobs:
         git add -A
         git commit -m "Publish patcher API from ${{ env.TAG }}" || exit 0
         git push origin HEAD:maven
+
+    - name: Delete superseded releases
+      if: inputs.delete != ''
+      run: |
+        gh release list --limit 200 --json tagName --jq '.[].tagName' > tags
+        for tag in $(grep -F -- "$PATTERN" tags | grep -vxF -- "$TAG" || true); do
+          gh release delete "$tag" --cleanup-tag --yes
+        done
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PATTERN: ${{ inputs.delete }}

@@ -76,10 +76,7 @@ class SourceStore(context: Context) {
         val raw = prefs.getString(KEY, null) ?: return listOf(PatchSource.default)
         return runCatching {
             val array = JSONArray(raw)
-            (0 until array.length()).map { PatchSource.fromJson(array.getJSONObject(it)) }.map {
-                // The default source moved to its own repository, which was renamed since.
-                if (it.id == PatchSource.default.id && it.url in FORMER_DEFAULT_URLS) it.copy(url = PatchSource.default.url) else it
-            }
+            (0 until array.length()).map { PatchSource.fromJson(array.getJSONObject(it)) }
         }.getOrDefault(listOf(PatchSource.default))
     }
 
@@ -97,7 +94,6 @@ class SourceStore(context: Context) {
 
     private companion object {
         const val KEY = "sources"
-        val FORMER_DEFAULT_URLS = setOf("2eno/NexAlloy-Next", "2eno/NexAlloy-Next.2eno", "2eno/NexAlloyNext.2eno-Patches")
     }
 }
 

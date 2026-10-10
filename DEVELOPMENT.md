@@ -116,7 +116,7 @@ object ExamplePatches : PatchBundle {
 
 Like Morphe's `compatibleWith`, a bundle can tell which app versions its patches were tested with, newest first.
 NexAlloyNext recommends the newest version that is not experimental and shows how the installed version compares.
-Leave `targets` empty if the patches find everything by fingerprints and work with any version (patcher API 2).
+Leave `targets` empty if the patches find everything by fingerprints and work with any version.
 
 ```kotlin
 AppPatchInfo(
@@ -256,5 +256,6 @@ The [FingerprintCompat.kt](patcher/src/main/java/io/github/nexalloy/morphe/Finge
 
 Push a tag `X.Y.Z` (Z is the module's `versionCode`), or `X.Y.Z-suffix` for a pre-release, or run the Release workflow
 with a tag name. It attaches the module APK to a GitHub release and publishes the patcher API to the `maven` branch.
+Its optional `delete` input removes older releases and their tags whose tag contains the given text, e.g. `-beta`.
 Without signing secrets, pre-releases are signed with a throwaway debug key. Bump `PATCHER_API_VERSION` (with
 `patcherApiVersion` in `gradle.properties`) and `patcherVersion` when the patcher API gains something bundles may use.

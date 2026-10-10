@@ -18,16 +18,9 @@ class AppRelease(
 
 /** Checks the GitHub releases of NexAlloy for updates. Blocking; call off the main thread. */
 object AppUpdateChecker {
-    /**
-     * The version code a release tag stands for: `X.Y.Z` and `X.Y.Z-suffix` carry it as Z,
-     * the old `code-name` tags before the dash. 0 if the tag has none, e.g. nightly builds.
-     */
-    fun versionCodeOf(tag: String): Int {
-        val version = tag.removePrefix("v")
-        val semantic = Regex("""\d+\.\d+\.(\d+)(-.*)?""").matchEntire(version)
-        if (semantic != null) return semantic.groupValues[1].toInt()
-        return version.substringBefore('-').toIntOrNull() ?: 0
-    }
+    /** The version code a release tag `X.Y.Z` or `X.Y.Z-suffix` stands for, Z. 0 for other tags, e.g. nightly builds. */
+    fun versionCodeOf(tag: String): Int =
+        Regex("""v?\d+\.\d+\.(\d+)(-.*)?""").matchEntire(tag)?.groupValues?.get(1)?.toInt() ?: 0
 
     /** The latest release, preferring stable ones; pre-releases count while there is no stable release. */
     fun latest(): AppRelease? {

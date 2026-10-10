@@ -46,8 +46,9 @@ class BundleManifest(
             val entry = meta.getString(META_ENTRY)
                 ?: throw InvalidBundleException("Not a NexAlloy patch bundle")
             val apiVersion = meta.getInt(META_API_VERSION, 0)
+            if (apiVersion < 1) throw InvalidBundleException("Not a NexAlloy patch bundle")
             if (apiVersion > PATCHER_API_VERSION) throw InvalidBundleException(
-                "Bundle requires patcher API $apiVersion, but this NexAlloy supports up to $PATCHER_API_VERSION. Update NexAlloy."
+                "Bundle requires patcher API $apiVersion, but this NexAlloyNext supports up to $PATCHER_API_VERSION. Update NexAlloyNext."
             )
             val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 info.longVersionCode

@@ -19,12 +19,6 @@
     <string name="scope_missing_text">Patches only apply to apps in the module scope: %s</string>
     <string name="apps_title">Apps</string>
     <string name="app_not_installed_short">Not installed</string>
-    <string name="app_not_installed_recommended">Not installed · recommended v%s</string>
-    <string name="app_any_version">v%s · any version</string>
-    <string name="app_version">v%s</string>
-    <string name="app_newer_than_tested">v%1$s · tested up to v%2$s</string>
-    <string name="app_older_than_recommended">v%1$s · recommended v%2$s</string>
-    <string name="chip_recommended">Recommended</string>
     <string name="recommended_version">Recommended version: %s</string>
     <string name="recommended_any_version">Works with any version</string>
     <string name="installed_version">Installed: %s</string>
