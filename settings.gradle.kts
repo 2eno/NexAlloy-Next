@@ -34,7 +34,7 @@ android {
     minSdk = 27
 }
 
-rootProject.name = "NexAlloy-Next"
+rootProject.name = "NexAlloyNext"
 
 // The module: loads patch bundles into apps and manages patch sources.
 include(":app")

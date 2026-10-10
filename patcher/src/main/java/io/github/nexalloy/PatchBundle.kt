@@ -7,10 +7,31 @@ package io.github.nexalloy
  * to load a bundle built against a newer API than the one it ships. Bump it whenever the API gains
  * something bundles may depend on, and treat removals as breaking changes.
  */
-const val PATCHER_API_VERSION = 1
+const val PATCHER_API_VERSION = 2
 
-/** The patches a bundle provides for one app. */
-class AppPatchInfo(val appName: String, val packageName: String, val patches: Array<Patch>)
+/**
+ * An app version the patches were tested with, like Morphe's `AppTarget`.
+ *
+ * @param experimental The patches may work, but are not known to fully support this version.
+ */
+class AppTarget @JvmOverloads constructor(val version: String, val experimental: Boolean = false)
+
+/**
+ * The patches a bundle provides for one app.
+ *
+ * @param targets App versions the patches were tested with, newest first. NexAlloyNext recommends the newest one
+ *   that is not experimental. Empty if the patches work with any version. Since patcher API 2.
+ */
+class AppPatchInfo @JvmOverloads constructor(
+    val appName: String,
+    val packageName: String,
+    val patches: Array<Patch>,
+    val targets: List<AppTarget> = emptyList(),
+) {
+    /** The version NexAlloyNext recommends, or null for any version. */
+    val recommendedVersion: String?
+        get() = (targets.firstOrNull { !it.experimental } ?: targets.firstOrNull())?.version
+}
 
 /**
  * Entry point of a patch bundle.

@@ -10,17 +10,17 @@ class PatchSourceTest {
 
     @Test
     fun githubRepository() {
-        assertEquals("2eno/NexAlloy-Next", repo("2eno/NexAlloy-Next"))
-        assertEquals("2eno/NexAlloy-Next", repo("https://github.com/2eno/NexAlloy-Next"))
-        assertEquals("2eno/NexAlloy-Next", repo("https://github.com/2eno/NexAlloy-Next/"))
-        assertEquals("2eno/NexAlloy-Next", repo(" https://github.com/2eno/NexAlloy-Next.git "))
+        assertEquals("2eno/NexAlloyNext", repo("2eno/NexAlloyNext"))
+        assertEquals("2eno/NexAlloyNext", repo("https://github.com/2eno/NexAlloyNext"))
+        assertEquals("2eno/NexAlloyNext", repo("https://github.com/2eno/NexAlloyNext/"))
+        assertEquals("2eno/NexAlloyNext", repo(" https://github.com/2eno/NexAlloyNext.git "))
         assertEquals("some.org/patches_x", repo("some.org/patches_x"))
     }
 
     @Test
     fun jsonSourceIsNotARepository() {
         assertNull(repo("https://example.com/patches-bundle.json"))
-        assertNull(repo("https://github.com/2eno/NexAlloy-Next/releases/latest"))
+        assertNull(repo("https://github.com/2eno/NexAlloyNext/releases/latest"))
     }
 
     @Test

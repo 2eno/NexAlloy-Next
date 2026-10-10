@@ -159,17 +159,13 @@ fun HomeContent(
                 }
             }
             items(apps, key = { it.key }) { (packageName, appName) ->
-                val installed = remember(packageName) { isInstalled(context, packageName) }
-                val bundles = state.bundles.filter { it.enabled && packageName in it.apps }.joinToString { it.name }
-                ListItem(
-                    headlineContent = { Text(appName) },
-                    supportingContent = {
-                        Text(if (installed) bundles else stringResource(R.string.app_not_installed, bundles))
-                    },
-                    leadingContent = { AppIcon(packageName) },
-                    trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    modifier = Modifier.clickable { onOpenApp(packageName) },
+                val bundles = state.bundles.filter { it.enabled && packageName in it.apps }
+                AppCard(
+                    appName = appName,
+                    packageName = packageName,
+                    recommendedVersion = bundles.firstNotNullOfOrNull { it.recommendedVersion(packageName) },
+                    bundles = bundles.joinToString { it.name },
+                    onClick = { onOpenApp(packageName) },
                 )
             }
         }

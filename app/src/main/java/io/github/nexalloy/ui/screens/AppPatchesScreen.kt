@@ -129,6 +129,16 @@ fun AppPatchesScreen(viewModel: ManagerViewModel, packageName: String, navContro
 
             else -> LazyColumn(contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = 24.dp)) {
                 item {
+                    val recommended = state.bundles.filter { it.enabled }.firstNotNullOfOrNull { it.recommendedVersion(packageName) }
+                    val installed = remember(packageName) { appLook(context, packageName).versionName }
+                    ActionCard(
+                        title = recommended?.let { stringResource(R.string.recommended_version, it) }
+                            ?: stringResource(R.string.recommended_any_version),
+                        text = installed?.let { stringResource(R.string.installed_version, it) }
+                            ?: stringResource(R.string.app_not_installed_short),
+                    )
+                }
+                item {
                     Text(
                         stringResource(R.string.force_stop_to_apply_summary),
                         style = MaterialTheme.typography.bodySmall,

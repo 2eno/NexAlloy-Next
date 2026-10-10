@@ -3,10 +3,10 @@
 ## Architecture
 
 NexAlloy is split into a module and patch bundles, like Morphe Manager and Morphe patch sources. This repository
-holds the module; the bundles NexAlloy presets live in [NexAlloy-Next.2eno](https://github.com/2eno/NexAlloy-Next.2eno).
+holds the module; the bundles NexAlloy presets live in [NexAlloyNext.2eno-Patches](https://github.com/2eno/NexAlloyNext.2eno-Patches).
 
 ```text
-📦 NexAlloy-Next
+📦 NexAlloyNext
  ├ app/            The LSPosed module: loads bundles into apps, manages patch sources (the "manager")
  ├ patcher/        The patcher API bundles compile against: patch(), fingerprints, hook helpers
  ├ build-logic/    The nexalloy.bundle Gradle plugin that builds a bundle
@@ -55,7 +55,7 @@ Patch toggles are stored in the per-app remote preferences under `<bundle id>/<p
 
 ## Writing a patch bundle
 
-Copy the [template](template) into a new repository. [NexAlloy-Next.2eno](https://github.com/2eno/NexAlloy-Next.2eno)
+Copy the [template](template) into a new repository. [NexAlloyNext.2eno-Patches](https://github.com/2eno/NexAlloyNext.2eno-Patches)
 is a larger example with two bundles, shared extension code and fingerprint tests.
 
 ### Bundle module
@@ -89,7 +89,7 @@ dependencies {
 `./gradlew :bundle:assembleBundle` writes `build/outputs/bundle/<module>-<version>.nxb`. Publish it as a release
 asset, and users can add the repository as a patch source.
 
-The patcher API is published to the Maven repository `https://raw.githubusercontent.com/2eno/NexAlloy-Next/maven`
+The patcher API is published to the Maven repository `https://raw.githubusercontent.com/2eno/NexAlloyNext/maven`
 by the release workflow. Add it and `https://api.xposed.info` to your repositories.
 
 Rules for bundles:
@@ -110,6 +110,19 @@ object ExamplePatches : PatchBundle {
         AppPatchInfo("Contoso", "com.contoso.app", arrayOf(UnlockPro)),
     )
 }
+```
+
+### Recommended app versions
+
+Like Morphe's `compatibleWith`, a bundle can tell which app versions its patches were tested with, newest first.
+NexAlloyNext recommends the newest version that is not experimental and shows how the installed version compares.
+Leave `targets` empty if the patches find everything by fingerprints and work with any version (patcher API 2).
+
+```kotlin
+AppPatchInfo(
+    "YouTube", "com.google.android.youtube", YouTubePatches,
+    targets = listOf(AppTarget("21.39.522", experimental = true), AppTarget("21.16.256")),
+)
 ```
 
 ### Patches

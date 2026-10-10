@@ -61,7 +61,7 @@ val flatbuffersVersion = libs.versions.flatbuffers.get()
 publishing {
     repositories {
         // Published by the release workflow to the `maven` branch, served as
-        // https://raw.githubusercontent.com/2eno/NexAlloy-Next/maven
+        // https://raw.githubusercontent.com/2eno/NexAlloyNext/maven
         maven {
             name = "release"
             url = uri(rootProject.layout.buildDirectory.dir("maven"))

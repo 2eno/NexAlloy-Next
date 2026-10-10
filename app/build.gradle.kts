@@ -20,13 +20,13 @@ android {
 
     defaultConfig {
         applicationId = "io.github.nexalloy.next"
-        versionCode = 7
+        versionCode = 8
         versionName = "3.0.$versionCode"
         buildConfigField("String", "COMMIT_HASH", "\"${gitCommitHashProvider.get()}\"")
         buildConfigField("long", "COMMIT_DATE", "${gitCommitDateProvider.get()}L")
         // GitHub repository checked for updates and used as the default patch source.
         // Builds by GitHub Actions of a fork use the fork's releases.
-        val updateRepository = providers.environmentVariable("GITHUB_REPOSITORY").getOrElse("2eno/NexAlloy-Next")
+        val updateRepository = providers.environmentVariable("GITHUB_REPOSITORY").getOrElse("2eno/NexAlloyNext")
         buildConfigField("String", "UPDATE_REPOSITORY", "\"$updateRepository\"")
     }
     val ksFile = rootProject.file("signing.properties")
@@ -110,6 +110,7 @@ dependencies {
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.navigation.compose)
     implementation(libs.work.runtime)
+    implementation(libs.palette)
 }
 
 tasks.withType<Test>().configureEach {

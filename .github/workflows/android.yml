@@ -60,7 +60,7 @@ jobs:
       run: |
         GIT_DESCRIBE=$(git rev-parse --short HEAD)
         mkdir autobuild
-        cp app/build/outputs/apk/release/app-release.apk autobuild/NexAlloy-${GIT_DESCRIBE}.apk
+        cp app/build/outputs/apk/release/app-release.apk autobuild/NexAlloyNext-${GIT_DESCRIBE}.apk
         gh release delete autobuild --cleanup-tag --yes || true
         gh release create autobuild autobuild/* \
           --prerelease \

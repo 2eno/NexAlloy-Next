@@ -4,7 +4,7 @@
 
 **LSPosed module that applies patch bundles from patch sources.**
 
-NexAlloy Next is [NexAlloy](https://github.com/2eno/NexAlloy) rebuilt around plug-ins, like [Morphe](https://morphe.software):
+NexAlloyNext is [NexAlloy](https://github.com/2eno/NexAlloy) rebuilt around plug-ins, like [Morphe](https://morphe.software):
 the module no longer contains any patches. Patches come in **patch bundles** (`.nxb` files) that you install from
 **patch sources**, so anyone can publish patches for NexAlloy from their own repository.
 
@@ -14,7 +14,7 @@ the module no longer contains any patches. Patches come in **patch bundles** (`.
 
 ## Usage
 
-1. Install the NexAlloyNext APK from the [latest release](https://github.com/2eno/NexAlloy-Next/releases) and enable the module in LSPosed.
+1. Install the NexAlloyNext APK from the [latest release](https://github.com/2eno/NexAlloyNext/releases) and enable the module in LSPosed.
    On first start, NexAlloyNext asks LSPosed to add itself to its scope.
 2. Open the **Patches** tab. The *NexAlloy Patches* source is preset; tap **Install**.
 3. Approve the scope request LSPosed shows for the apps of the installed bundles.
@@ -38,7 +38,7 @@ You can also import a `.nxb` file from storage.
 
 ## Patch bundles
 
-The preset *NexAlloy Patches* source is [NexAlloy-Next.2eno](https://github.com/2eno/NexAlloy-Next.2eno), which
+The preset *NexAlloy Patches* source is [NexAlloyNext.2eno-Patches](https://github.com/2eno/NexAlloyNext.2eno-Patches), which
 provides the NexAlloy Patches and 2eno Patches bundles. See there for the patched apps.
 
 ### Your own bundle

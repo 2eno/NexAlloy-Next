@@ -58,7 +58,7 @@ jobs:
     - name: Create release
       run: |
         mkdir release
-        cp app/build/outputs/apk/release/app-release.apk release/NexAlloy-${{ env.TAG }}.apk
+        cp app/build/outputs/apk/release/app-release.apk release/NexAlloyNext-${{ env.TAG }}.apk
         FLAGS=""
         NOTES=""
         # Tags like 3.0.1-alpha are pre-releases.

@@ -1,6 +1,7 @@
 package io.github.nexalloy.core
 
 import android.content.SharedPreferences
+import io.github.nexalloy.AppTarget
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -27,7 +28,13 @@ data class InstalledBundle(
     val apps: Map<String, String>,
     /** Package id of the bundle's resources, 0 if unknown. */
     val resourcePackageId: Int = 0,
+    /** Package name to the app versions the bundle was tested with, newest first. */
+    val targets: Map<String, List<AppTarget>> = emptyMap(),
 ) {
+    /** The version this bundle recommends for an app, or null for any version. */
+    fun recommendedVersion(packageName: String): String? =
+        targets[packageName]?.let { targets -> (targets.firstOrNull { !it.experimental } ?: targets.firstOrNull())?.version }
+
     fun toJson(): JSONObject = JSONObject()
         .put("id", id)
         .put("name", name)
@@ -40,6 +47,13 @@ data class InstalledBundle(
         .put("sourceId", sourceId)
         .put("apps", JSONObject(apps))
         .put("resourcePackageId", resourcePackageId)
+        .put("targets", JSONObject().apply {
+            targets.forEach { (packageName, versions) ->
+                put(packageName, JSONArray().apply {
+                    versions.forEach { put(JSONObject().put("version", it.version).put("experimental", it.experimental)) }
+                })
+            }
+        })
 
     companion object {
         fun fromJson(json: JSONObject) = InstalledBundle(
@@ -56,6 +70,13 @@ data class InstalledBundle(
                 apps.keys().asSequence().associateWith { apps.getString(it) }
             },
             resourcePackageId = json.optInt("resourcePackageId"),
+            targets = json.optJSONObject("targets")?.let { targets ->
+                targets.keys().asSequence().associateWith { packageName ->
+                    val array = targets.getJSONArray(packageName)
+                    (0 until array.length()).map { array.getJSONObject(it) }
+                        .map { AppTarget(it.getString("version"), it.optBoolean("experimental")) }
+                }
+            }.orEmpty(),
         )
     }
 }
