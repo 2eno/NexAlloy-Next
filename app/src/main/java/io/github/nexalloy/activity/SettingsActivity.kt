@@ -26,6 +26,10 @@ import kotlin.system.exitProcess
 
 class SettingsActivity : Activity(), SettingApplication.ServiceStateListener {
 
+    private companion object {
+        var ownScopeRequested = false
+    }
+
     private var mService: XposedService? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -111,6 +115,37 @@ class SettingsActivity : Activity(), SettingApplication.ServiceStateListener {
         private var mService: XposedService? = null
 
         private var offPreference: Preference? = null
+        private var statusPreference: Preference? = null
+
+        /**
+         * The module is active if the framework's service is bound, or if the module hooked this app.
+         * The latter needs this app in the module scope, see [requestOwnScope].
+         */
+        private fun updateStatus(service: XposedService?) {
+            val preference = statusPreference ?: return
+            val framework = service?.let { "${it.frameworkName} ${it.frameworkVersion}" } ?: ModuleStatus.frameworkName()
+            if (service != null || ModuleStatus.isActive()) {
+                preference.setTitle(R.string.module_active_title)
+                preference.summary = framework
+            } else {
+                preference.setTitle(R.string.module_inactive_title)
+                preference.setSummary(R.string.module_inactive_summary)
+            }
+        }
+
+        /**
+         * Frameworks only put a legacy module's own app in its scope by themselves, so NexAlloy asks for it,
+         * once per process.
+         */
+        private fun requestOwnScope(service: XposedService) {
+            if (ownScopeRequested) return
+            ownScopeRequested = true
+            val packageName = context.packageName
+            val inScope = runCatching { packageName in service.scope }.getOrDefault(true)
+            if (!inScope) runCatching {
+                service.requestScope(listOf(packageName), object : XposedService.OnScopeEventListener {})
+            }
+        }
         private var onCategory: PreferenceCategory? = null
 
         @Deprecated("Deprecated in Java")
@@ -126,17 +161,11 @@ class SettingsActivity : Activity(), SettingApplication.ServiceStateListener {
                 rootScreen.addPreference(this)
             }
 
-            Preference(context).apply {
-                if (ModuleStatus.isActive()) {
-                    setTitle(R.string.module_active_title)
-                    summary = ModuleStatus.frameworkName()
-                } else {
-                    setTitle(R.string.module_inactive_title)
-                    setSummary(R.string.module_inactive_summary)
-                }
+            statusPreference = Preference(context).apply {
                 isSelectable = false
                 rootScreen.addPreference(this)
             }
+            updateStatus(null)
 
             Preference(context).apply {
                 setTitle(R.string.faq_title)
@@ -237,7 +266,11 @@ class SettingsActivity : Activity(), SettingApplication.ServiceStateListener {
                 runCatching { it.getRemotePreferences(io.github.nexalloy.core.BundleRegistry.PREFS_GROUP) }.isSuccess
             }
             mService = activated
-            activity?.runOnUiThread { updateDynamicUI(activated) }
+            activity?.runOnUiThread {
+                updateStatus(activated)
+                updateDynamicUI(activated)
+                if (activated != null) requestOwnScope(activated)
+            }
         }
     }
 }
