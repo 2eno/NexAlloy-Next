@@ -9,6 +9,9 @@
     <string name="faq_title">Frequently Asked Questions</string>
     <string name="disable_auto_check_update_title">Disable auto update check</string>
     <string name="module_not_activated_summary">Activate this module in Module Management!</string>
+    <string name="module_active_title">Module is active</string>
+    <string name="module_inactive_title">Module is not active</string>
+    <string name="module_inactive_summary">Enable NexAlloy in LSPosed, keep NexAlloy itself in its scope, then restart NexAlloy.</string>
     <string name="slogan_summary">LSPosed module powered by Morphe, ReVanced, and beyond. Patches come from patch bundles that you install from patch sources.\n\nThis is not an official Morphe or ReVanced project, do not ask their developers for help.</string>
 
     <string name="patch_sources_title">Patch sources</string>

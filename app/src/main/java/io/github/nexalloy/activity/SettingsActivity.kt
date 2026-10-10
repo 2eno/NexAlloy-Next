@@ -20,6 +20,7 @@ import io.github.libxposed.service.XposedService
 import io.github.nexalloy.core.BuildConfig
 import io.github.nexalloy.core.R
 import io.github.nexalloy.common.UpdateChecker
+import io.github.nexalloy.core.ModuleStatus
 import io.github.nexalloy.manager.BundleManager
 import kotlin.system.exitProcess
 
@@ -122,6 +123,18 @@ class SettingsActivity : Activity(), SettingApplication.ServiceStateListener {
             Preference(context).apply {
                 setSummary(R.string.slogan_summary)
                 isEnabled = false
+                rootScreen.addPreference(this)
+            }
+
+            Preference(context).apply {
+                if (ModuleStatus.isActive()) {
+                    setTitle(R.string.module_active_title)
+                    summary = ModuleStatus.frameworkName()
+                } else {
+                    setTitle(R.string.module_inactive_title)
+                    setSummary(R.string.module_inactive_summary)
+                }
+                isSelectable = false
                 rootScreen.addPreference(this)
             }
 

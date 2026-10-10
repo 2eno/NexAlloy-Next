@@ -2,6 +2,7 @@ package io.github.nexalloy
 
 import android.app.Application
 import android.widget.Toast
+import de.robv.android.xposed.XC_MethodReplacement
 import de.robv.android.xposed.XposedHelpers
 import io.github.libxposed.api.XposedInterface
 import io.github.libxposed.api.XposedModule
@@ -11,6 +12,7 @@ import io.github.nexalloy.core.BundleClassLoader
 import io.github.nexalloy.core.BundleManifest
 import io.github.nexalloy.core.BundleRegistry
 import io.github.nexalloy.core.InstalledBundle
+import io.github.nexalloy.core.ModuleStatus
 import io.github.nexalloy.morphe.ResourceFinder
 import io.github.nexalloy.morphe.resourceMappings
 import java.io.File
@@ -21,6 +23,10 @@ class MainHook : XposedModule() {
 
     override fun onPackageReady(param: PackageReadyParam) {
         if (!param.isFirstPackage) return
+        if (param.packageName == moduleApplicationInfo.packageName) {
+            reportActive(param.classLoader)
+            return
+        }
         if (targetPackageName != null && targetPackageName != param.packageName) return
 
         val bundles = runCatching {
@@ -88,6 +94,14 @@ class MainHook : XposedModule() {
         val patches = apps.filter { it.packageName == app.packageName }
             .flatMap { it.patches.asList() }.toTypedArray()
         return BundleInfo(manifest.id, manifest.name, manifest.version, apk.path, classLoader) to patches
+    }
+
+    /** Tells NexAlloy's own app that the module is active, see [ModuleStatus]. */
+    private fun reportActive(classLoader: ClassLoader) {
+        val status = classLoader.loadClass(ModuleStatus::class.java.name)
+        val framework = "$frameworkName $frameworkVersion"
+        status.getMethod("isActive").hookMethod(XC_MethodReplacement.returnConstant(true))
+        status.getMethod("frameworkName").hookMethod(XC_MethodReplacement.returnConstant(framework))
     }
 
     private fun isPatchedApp(param: PackageReadyParam): Boolean = listOf(

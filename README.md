@@ -16,6 +16,7 @@ the module no longer contains any patches. Patches come in **patch bundles** (`.
 ## Usage
 
 1. Install the NexAlloy APK from the [latest release](https://github.com/2eno/NexAlloy-Next/releases/latest) and enable the module in LSPosed.
+   NexAlloy is in its own scope, so it can show at the top of its settings whether the module is active.
 2. Open NexAlloy > **Patch sources**. The *NexAlloy Patches* source is preset; tap it and choose **Install**.
 3. Approve the scope request LSPosed shows for the patched apps.
 4. Pick the patches of each app under **Patch Selection**, then force stop the app.
