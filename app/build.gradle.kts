@@ -3,6 +3,7 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
+    alias(libs.plugins.kotlin.compose)
 }
 
 fun gitOutput(vararg args: String) = providers.exec {
@@ -19,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId = "io.github.nexalloy.next"
-        versionCode = 6
+        versionCode = 7
         versionName = "3.0.$versionCode"
         buildConfigField("String", "COMMIT_HASH", "\"${gitCommitHashProvider.get()}\"")
         buildConfigField("long", "COMMIT_DATE", "${gitCommitDateProvider.get()}L")
@@ -43,7 +44,10 @@ android {
             }
         }
     }
-    buildFeatures.buildConfig = true
+    buildFeatures {
+        buildConfig = true
+        compose = true
+    }
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -95,6 +99,17 @@ dependencies {
     implementation(libs.libxposed.service)
     // Rewrites bundle code for frameworks that rename the Xposed API.
     implementation(libs.dexlib2)
+
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons)
+    implementation(libs.compose.ui.tooling.preview)
+    debugImplementation(libs.compose.ui.tooling)
+    implementation(libs.activity.compose)
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.lifecycle.runtime.compose)
+    implementation(libs.navigation.compose)
+    implementation(libs.work.runtime)
 }
 
 tasks.withType<Test>().configureEach {

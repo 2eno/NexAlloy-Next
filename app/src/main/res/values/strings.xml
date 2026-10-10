@@ -1,54 +1,85 @@
 <resources>
-    <string name="app_name">NexAlloy</string>
+    <string name="app_name">NexAlloyNext</string>
     <string name="app_description">LSPosed module that applies patch bundles from patch sources.</string>
-    <string name="check_for_update_title">Check for update</string>
-    <string name="patch_selection">Patch Selection</string>
-    <string name="force_stop_to_apply_summary">Force stop the corresponding application to apply the settings.</string>
-    <string name="open_source_license">Open-source licenses</string>
-    <string name="hide_icon_title">Hide icon from launcher</string>
-    <string name="faq_title">Frequently Asked Questions</string>
-    <string name="disable_auto_check_update_title">Disable auto update check</string>
-    <string name="module_not_activated_summary">Activate this module in Module Management!</string>
+    <string name="slogan_summary">NexAlloyNext is an LSPosed module that applies patch bundles from patch sources. Patch bundles run code inside the apps they patch: only add patch sources you trust.</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_patches">Patches</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Home -->
     <string name="module_active_title">Module is active</string>
     <string name="module_inactive_title">Module is not active</string>
-    <string name="module_inactive_summary">Enable NexAlloy in LSPosed, keep NexAlloy itself in its scope, then restart NexAlloy.</string>
-    <string name="slogan_summary">LSPosed module that applies patch bundles from patch sources. Patch bundles run code inside the apps they patch: only add patch sources you trust.</string>
+    <string name="module_inactive_summary">Enable NexAlloyNext in LSPosed and restart the app.</string>
+    <string name="app_update_title">NexAlloyNext %s is available</string>
+    <string name="app_update_text">A new version of the app is available.</string>
+    <string name="patch_updates_title">Patch updates available</string>
+    <string name="scope_missing_title">Apps missing from module scope</string>
+    <string name="scope_missing_text">Patches only apply to apps in the module scope: %s</string>
+    <string name="apps_title">Apps</string>
+    <string name="app_not_installed">Not installed · %s</string>
+    <string name="no_bundles_title">No patches installed</string>
+    <string name="no_bundles_text">Install patch bundles from a patch source to patch apps.</string>
+    <string name="action_browse_sources">Browse patch sources</string>
+    <string name="action_download">Download</string>
+    <string name="action_update_all">Update all</string>
+    <string name="action_request">Request</string>
+    <string name="up_to_date">Everything is up to date</string>
+    <string name="update_check_failed">Update check failed: %s</string>
 
-    <string name="patch_sources_title">Patch sources</string>
+    <!-- Patches -->
     <string name="patch_sources_summary">Patch sources provide patch bundles, like the patch sources of Morphe. A source is a GitHub repository whose releases contain .nxb bundles, or the URL of a bundle JSON file.</string>
-    <plurals name="installed_bundles_summary">
-        <item quantity="one">%d patch bundle installed</item>
-        <item quantity="other">%d patch bundles installed</item>
-    </plurals>
     <string name="sources_category">Sources</string>
     <string name="installed_bundles_category">Installed bundles</string>
-    <string name="no_bundles_summary">No patch bundles installed. Tap a source to install its bundles.</string>
-    <string name="add_source_title">Add source…</string>
+    <string name="add_source_title">Add source</string>
     <string name="add_source_warning">Patch bundles run code inside the apps they patch. Only add sources you trust.</string>
     <string name="source_name_hint">Name (optional)</string>
     <string name="source_url_hint">owner/repo, GitHub URL or bundle JSON URL</string>
     <string name="source_prerelease">Use pre-releases</string>
-    <string name="import_bundle_title">Import bundle from file…</string>
-    <string name="import_bundle_summary">Install a .nxb patch bundle from storage</string>
+    <string name="import_bundle_title">Import bundle from file</string>
     <string name="source_checking">Checking for updates…</string>
     <string name="source_installing">Installing…</string>
     <string name="source_error">Error: %s</string>
-    <string name="source_available">Not installed, latest: %s</string>
-    <string name="source_update_available">Installed: %1$s, update available: %2$s</string>
-    <string name="source_up_to_date">Installed: %s (up to date)</string>
-    <string name="bundle_disabled">Disabled</string>
-    <string name="bundle_details">Id: %1$s\nVersion: %2$s</string>
+    <string name="source_available">Not installed · latest %s</string>
+    <string name="source_update_available">Installed %1$s · update to %2$s</string>
+    <string name="source_up_to_date">Installed %s · up to date</string>
     <string name="bundles_installed">Installed %s. Force stop the patched apps to apply.</string>
     <string name="install_failed">Install failed: %s</string>
-    <string name="scope_missing_title">Apps missing from module scope</string>
-    <string name="scope_missing_summary">Patches only apply to apps in the module scope. Tap to add: %s</string>
+    <string name="remove_title">Remove %s?</string>
     <string name="action_install">Install</string>
-    <string name="action_update">Update / reinstall</string>
+    <string name="action_update">Update</string>
+    <string name="action_reinstall">Reinstall</string>
     <string name="action_changelog">Changelog</string>
-    <string name="action_open_page">Open release page</string>
-    <string name="action_remove_source">Remove source</string>
     <string name="action_add">Add</string>
-    <string name="action_enable">Enable</string>
-    <string name="action_disable">Disable</string>
+    <string name="action_remove">Remove</string>
     <string name="action_uninstall">Uninstall</string>
+
+    <!-- App patches -->
+    <string name="force_stop_to_apply_summary">Force stop the app to apply changes.</string>
+    <string name="patches_load_failed">Could not load the patches: %s</string>
+    <string name="action_app_info">App info</string>
+    <string name="action_restore_defaults">Restore defaults</string>
+    <string name="action_disable_all">Disable all</string>
+
+    <!-- Settings -->
+    <string name="settings_updates">Updates</string>
+    <string name="setting_notify_app">App update notifications</string>
+    <string name="setting_notify_app_summary">Notify when a new version of NexAlloyNext is released</string>
+    <string name="setting_notify_patches">Patch update notifications</string>
+    <string name="setting_notify_patches_summary">Notify when an installed patch source releases new bundles</string>
+    <string name="check_for_update_title">Check for updates</string>
+    <string name="settings_general">General</string>
+    <string name="hide_icon_title">Hide launcher icon</string>
+    <string name="hide_icon_summary">Open NexAlloyNext from LSPosed instead</string>
+    <string name="settings_about">About</string>
+    <string name="source_code">Source code</string>
+    <string name="open_source_license">Open-source licenses</string>
+
+    <!-- Notifications -->
+    <string name="channel_app_updates">App updates</string>
+    <string name="channel_patch_updates">Patch updates</string>
+    <string name="notification_app_update_title">NexAlloyNext %s is available</string>
+    <string name="notification_app_update_text">Tap to update the app.</string>
+    <string name="notification_patch_update_title">Patch updates available</string>
 </resources>

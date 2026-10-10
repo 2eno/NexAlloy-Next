@@ -3,6 +3,8 @@ package io.github.nexalloy.activity
 import android.app.Application
 import io.github.libxposed.service.XposedService
 import io.github.libxposed.service.XposedServiceHelper
+import io.github.nexalloy.updates.UpdateNotifications
+import io.github.nexalloy.updates.UpdateWorker
 import java.util.concurrent.CopyOnWriteArraySet
 import kotlin.concurrent.Volatile
 
@@ -48,6 +50,8 @@ class SettingApplication : Application(), XposedServiceHelper.OnServiceListener 
     override fun onCreate() {
         super.onCreate()
         XposedServiceHelper.registerListener(this)
+        UpdateNotifications.createChannels(this)
+        UpdateWorker.schedule(this)
     }
 
     interface ServiceStateListener {

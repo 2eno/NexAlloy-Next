@@ -1,6 +1,6 @@
 package io.github.nexalloy.manager
 
-import io.github.nexalloy.common.VersionInfo
+import io.github.nexalloy.updates.AppUpdateChecker
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -24,8 +24,11 @@ class PatchSourceTest {
     }
 
     @Test
-    fun versionInfoFromTagName() {
-        assertEquals(VersionInfo(12, "3.0.12"), VersionInfo.fromTagName("3.0.12"))
-        assertEquals(VersionInfo(110, "2.0.110"), VersionInfo.fromTagName("110-2.0.110"))
+    fun versionCodeOfTag() {
+        assertEquals(12, AppUpdateChecker.versionCodeOf("3.0.12"))
+        assertEquals(6, AppUpdateChecker.versionCodeOf("3.0.6-alpha"))
+        assertEquals(7, AppUpdateChecker.versionCodeOf("v3.0.7"))
+        assertEquals(110, AppUpdateChecker.versionCodeOf("110-2.0.110"))
+        assertEquals(0, AppUpdateChecker.versionCodeOf("autobuild"))
     }
 }

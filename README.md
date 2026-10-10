@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>NexAlloy Next</h1>
+  <h1>NexAlloyNext</h1>
 </div>
 
 **LSPosed module that applies patch bundles from patch sources.**
@@ -14,13 +14,14 @@ the module no longer contains any patches. Patches come in **patch bundles** (`.
 
 ## Usage
 
-1. Install the NexAlloy APK from the [latest release](https://github.com/2eno/NexAlloy-Next/releases/latest) and enable the module in LSPosed.
-   On first start, NexAlloy asks LSPosed to add NexAlloy itself to its scope, so it can tell whether it is loaded.
-2. Open NexAlloy > **Patch sources**. The *NexAlloy Patches* source is preset; tap it and choose **Install**.
-3. Approve the scope requests LSPosed shows for the installed apps the bundles patch (one notification per app).
-4. Pick the patches of each app under **Patch Selection**, then force stop the app.
+1. Install the NexAlloyNext APK from the [latest release](https://github.com/2eno/NexAlloy-Next/releases) and enable the module in LSPosed.
+   On first start, NexAlloyNext asks LSPosed to add itself to its scope.
+2. Open the **Patches** tab. The *NexAlloy Patches* source is preset; tap **Install**.
+3. Approve the scope request LSPosed shows for the apps of the installed bundles.
+4. Pick an app on the **Home** tab, choose its patches, then force stop the app.
 
-Updates of installed sources are shown in **Patch sources**; tap a source to update its bundles.
+NexAlloyNext checks for updates of itself and of installed patch sources in the background and notifies about them;
+both notifications can be turned off in **Settings**.
 
 ### Patch sources
 
