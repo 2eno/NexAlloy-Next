@@ -43,8 +43,13 @@ class BundleManager(private val context: Context, private val service: XposedSer
             val hash = digest.digest().joinToString("") { "%02x".format(it) }.take(16)
 
             val manifest = BundleManifest.read(context.packageManager, tmp)
-            val clash = installed.find {
+            var clash = installed.find {
                 it.id != manifest.id && manifest.resourcePackageId != 0 && it.resourcePackageId == manifest.resourcePackageId
+            }
+            // A source that renamed its bundle: the new bundle replaces the old one.
+            if (clash != null && sourceId != null && clash.sourceId == sourceId) {
+                uninstall(clash)
+                clash = null
             }
             if (clash != null) throw InvalidBundleException(
                 "${manifest.name} uses the resource package id 0x%02x of ${clash.name}; both cannot be installed."

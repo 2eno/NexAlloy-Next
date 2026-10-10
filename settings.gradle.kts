@@ -44,4 +44,4 @@ include(":patcher")
 // Patch bundles released alongside the module.
 include(":stub")
 include(":bundles:nexalloy")
-include(":bundles:twoeno")
+include(":bundles:2eno")

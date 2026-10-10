@@ -11,7 +11,7 @@ NexAlloy is split into a module and patch bundles, like Morphe Manager and Morph
  ├ build-logic/    The nexalloy.bundle Gradle plugin that builds a bundle
  ├ bundles/
  │  ├ nexalloy/    NexAlloy Patches: Morphe, ReVanced, Piko and hoodles patches
- │  ├ twoeno/      2eno Patches: extension code from the 2eno-patches submodule
+ │  ├ 2eno/        2eno Patches: extension code from the 2eno-patches submodule
  │  └ testing/     Fingerprint test harness shared by the bundles
  ├ stub/           Stubs of YouTube classes used by the Morphe extensions
  └ template/       Standalone template for patch bundles in other repositories
