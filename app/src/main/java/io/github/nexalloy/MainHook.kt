@@ -1,0 +1,113 @@
+package io.github.nexalloy
+
+import android.app.Application
+import android.widget.Toast
+import de.robv.android.xposed.XposedHelpers
+import io.github.libxposed.api.XposedInterface
+import io.github.libxposed.api.XposedModule
+import io.github.libxposed.api.XposedModuleInterface.PackageReadyParam
+import io.github.nexalloy.core.BuildConfig
+import io.github.nexalloy.core.BundleClassLoader
+import io.github.nexalloy.core.BundleManifest
+import io.github.nexalloy.core.BundleRegistry
+import io.github.nexalloy.core.InstalledBundle
+import io.github.nexalloy.morphe.ResourceFinder
+import io.github.nexalloy.morphe.resourceMappings
+import java.io.File
+import java.io.FileInputStream
+
+class MainHook : XposedModule() {
+    private var targetPackageName: String? = null
+
+    override fun onPackageReady(param: PackageReadyParam) {
+        if (!param.isFirstPackage) return
+        if (targetPackageName != null && targetPackageName != param.packageName) return
+
+        val bundles = runCatching {
+            BundleRegistry.read(getRemotePreferences(BundleRegistry.PREFS_GROUP))
+        }.getOrDefault(emptyList()).filter { it.enabled && param.packageName in it.apps }
+        if (bundles.isEmpty()) return
+        targetPackageName = param.packageName
+
+        inContext(param) { app ->
+            if (isPatchedApp(param)) {
+                Toast.makeText(app, "NexAlloy does not work with patched apps", Toast.LENGTH_LONG).show()
+                return@inContext
+            }
+
+            resourceMappings = object : ResourceFinder {
+                override operator fun get(type: String, name: String): Int {
+                    val id = app.resources.getIdentifier(name, type, app.packageName)
+                    if (id == 0) throw Exception("Could not find resource type: $type name: $name")
+                    return id
+                }
+            }
+            PatcherLog.verbose = BuildConfig.DEBUG
+
+            val session = PatchSession(app, param, this, BuildConfig.COMMIT_HASH, BuildConfig.DEBUG)
+            val loaded = bundles.mapNotNull { bundle ->
+                runCatching { loadBundle(app, bundle, bundles) }
+                    .onFailure { session.reportBundleFailure(bundle.name, it) }
+                    .getOrNull()
+            }
+            // Register every bundle's resources before any patch adds them to a context.
+            loaded.forEach { (info, _) -> BundleResources.register(info.apkPath) }
+            loaded.forEach { (info, patches) -> session.apply(info, patches) }
+            session.finish()
+        }
+    }
+
+    /**
+     * Copies the bundle APK from the module's remote files into the app's code cache and loads it.
+     *
+     * The copy is named after the remote file, which changes with every bundle update.
+     */
+    private fun loadBundle(
+        app: Application,
+        bundle: InstalledBundle,
+        activeBundles: List<InstalledBundle>,
+    ): Pair<BundleInfo, Array<Patch>> {
+        val dir = File(app.codeCacheDir, "nexalloy").apply { mkdirs() }
+        dir.listFiles()?.forEach { file ->
+            if (activeBundles.none { it.fileName == file.name }) file.delete()
+        }
+
+        val apk = File(dir, bundle.fileName)
+        if (!apk.exists()) {
+            val tmp = File(dir, "${bundle.fileName}.tmp")
+            openRemoteFile(bundle.fileName).use { pfd ->
+                FileInputStream(pfd.fileDescriptor).use { input ->
+                    tmp.outputStream().use { input.copyTo(it) }
+                }
+            }
+            if (!tmp.renameTo(apk)) throw IllegalStateException("Cannot store bundle ${bundle.id}")
+        }
+
+        val manifest = BundleManifest.read(app.packageManager, apk)
+        val (classLoader, apps) = BundleClassLoader.load(apk, manifest.entryClass, MainHook::class.java.classLoader!!)
+        val patches = apps.filter { it.packageName == app.packageName }
+            .flatMap { it.patches.asList() }.toTypedArray()
+        return BundleInfo(manifest.id, manifest.name, manifest.version, apk.path, classLoader) to patches
+    }
+
+    private fun isPatchedApp(param: PackageReadyParam): Boolean = listOf(
+        "app.morphe.extension.shared.Utils",
+        "app.morphe.extension.shared.utils.Utils",
+        "app.revanced.integrations.shared.Utils",
+        "app.revanced.integrations.shared.utils.Utils",
+        "app.revanced.extension.shared.Utils",
+        // Patched with 2eno Patches.
+        "app.twoeno.extension.shared.Logger",
+    ).any { runCatching { param.classLoader.loadClass(it) }.isSuccess }
+}
+
+context(xposed: XposedInterface)
+fun inContext(lpparam: PackageReadyParam, f: (Application) -> Unit) {
+    val appClassName = lpparam.applicationInfo.className ?: Application::class.java.name
+    val appClazz = XposedHelpers.findClass(appClassName, lpparam.classLoader)
+    appClazz.getMethod("onCreate").hookMethod {
+        before {
+            f(it.thisObject as Application)
+        }
+    }
+}
