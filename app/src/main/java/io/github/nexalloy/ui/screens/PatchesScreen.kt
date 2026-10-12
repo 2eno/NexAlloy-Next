@@ -16,7 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -30,6 +29,7 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -100,9 +100,6 @@ fun PatchesContent(
             TopAppBar(
                 title = { Text(stringResource(R.string.nav_patches)) },
                 actions = {
-                    IconButton(onClick = onCheckUpdates, enabled = !state.checkingUpdates) {
-                        Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.check_for_update_title))
-                    }
                     IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = null) }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         DropdownMenuItem(
@@ -123,54 +120,60 @@ fun PatchesContent(
             )
         },
     ) { padding ->
-        LazyColumn(
-            contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = 96.dp),
-            modifier = Modifier.fillMaxSize(),
+        PullToRefreshBox(
+            isRefreshing = state.checkingUpdates,
+            onRefresh = onCheckUpdates,
+            modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding()),
         ) {
-            if (!state.isActive) {
-                item {
-                    ActionCard(
-                        title = stringResource(R.string.module_inactive_title),
-                        text = stringResource(R.string.module_inactive_summary),
-                        icon = Icons.Filled.Warning,
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
+            LazyColumn(
+                contentPadding = PaddingValues(bottom = 96.dp),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                if (!state.isActive) {
+                    item {
+                        ActionCard(
+                            title = stringResource(R.string.module_inactive_title),
+                            text = stringResource(R.string.module_inactive_summary),
+                            icon = Icons.Filled.Warning,
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                        )
+                    }
+                }
+                item { SectionHeader(stringResource(R.string.sources_category)) }
+                items(state.sources, key = { it.id }) { source ->
+                    SourceCard(
+                        source, state,
+                        onInstall = { onInstall(source) },
+                        onChangelog = { release -> changelog = "${source.name} ${release.first}" to release.second },
+                        onRemove = { confirm = source.name to { onRemoveSource(source) } },
                     )
                 }
-            }
-            item { SectionHeader(stringResource(R.string.sources_category)) }
-            items(state.sources, key = { it.id }) { source ->
-                SourceCard(
-                    source, state,
-                    onInstall = { onInstall(source) },
-                    onChangelog = { release -> changelog = "${source.name} ${release.first}" to release.second },
-                    onRemove = { confirm = source.name to { onRemoveSource(source) } },
-                )
-            }
-            item { SectionHeader(stringResource(R.string.installed_bundles_category)) }
-            if (state.bundles.isEmpty()) {
+                item { SectionHeader(stringResource(R.string.installed_bundles_category)) }
+                if (state.bundles.isEmpty()) {
+                    item {
+                        Text(
+                            stringResource(R.string.no_bundles_text),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                        )
+                    }
+                }
+                items(state.bundles.sortedBy { it.name.lowercase() }, key = { it.id }) { bundle ->
+                    BundleCard(
+                        bundle,
+                        onEnabled = { onSetEnabled(bundle, it) },
+                        onUninstall = { confirm = bundle.name to { onUninstall(bundle) } },
+                    )
+                }
                 item {
                     Text(
-                        stringResource(R.string.no_bundles_text),
-                        style = MaterialTheme.typography.bodyMedium,
+                        stringResource(R.string.patch_sources_summary),
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp),
+                        modifier = Modifier.padding(16.dp),
                     )
                 }
-            }
-            items(state.bundles.sortedBy { it.name.lowercase() }, key = { it.id }) { bundle ->
-                BundleCard(
-                    bundle,
-                    onEnabled = { onSetEnabled(bundle, it) },
-                    onUninstall = { confirm = bundle.name to { onUninstall(bundle) } },
-                )
-            }
-            item {
-                Text(
-                    stringResource(R.string.patch_sources_summary),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(16.dp),
-                )
             }
         }
     }

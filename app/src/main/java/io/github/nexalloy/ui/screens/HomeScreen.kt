@@ -17,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -26,7 +25,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -89,85 +88,86 @@ fun HomeContent(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
-                actions = {
-                    IconButton(onClick = onCheckUpdates, enabled = !state.checkingUpdates) {
-                        Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.check_for_update_title))
-                    }
-                },
                 scrollBehavior = scrollBehavior,
             )
         },
     ) { padding ->
-        LazyColumn(
-            contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = 16.dp),
-            modifier = Modifier.fillMaxSize(),
+        PullToRefreshBox(
+            isRefreshing = state.checkingUpdates,
+            onRefresh = onCheckUpdates,
+            modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding()),
         ) {
-            item {
-                StatusCard(
-                    active = state.isActive,
-                    title = stringResource(if (state.isActive) R.string.module_active_title else R.string.module_inactive_title),
-                    text = if (state.isActive) state.framework.orEmpty() else stringResource(R.string.module_inactive_summary),
-                )
-            }
-
-            state.appUpdate?.let { release ->
+            LazyColumn(
+                contentPadding = PaddingValues(bottom = 16.dp),
+                modifier = Modifier.fillMaxSize(),
+            ) {
                 item {
-                    ActionCard(
-                        icon = Icons.Filled.Notifications,
-                        title = stringResource(R.string.app_update_title, release.tag),
-                        text = stringResource(R.string.app_update_text),
-                        primary = stringResource(R.string.action_download) to { openUrl(context, release.apkUrl ?: release.pageUrl) },
-                        secondary = stringResource(R.string.action_changelog) to { changelog = release.tag to release.notes },
+                    StatusCard(
+                        active = state.isActive,
+                        title = stringResource(if (state.isActive) R.string.module_active_title else R.string.module_inactive_title),
+                        text = if (state.isActive) state.framework.orEmpty() else stringResource(R.string.module_inactive_summary),
                     )
                 }
-            }
 
-            val updates = state.sourcesWithUpdates
-            if (updates.isNotEmpty() && state.isActive) {
-                item {
-                    ActionCard(
-                        icon = Icons.Filled.Notifications,
-                        title = stringResource(R.string.patch_updates_title),
-                        text = updates.joinToString { "${it.name} ${state.releases[it.id]?.getOrNull()?.version}" },
-                        primary = stringResource(R.string.action_update_all) to onUpdateAll,
-                        secondary = stringResource(R.string.nav_patches) to onOpenPatches,
+                state.appUpdate?.let { release ->
+                    item {
+                        ActionCard(
+                            icon = Icons.Filled.Notifications,
+                            title = stringResource(R.string.app_update_title, release.tag),
+                            text = stringResource(R.string.app_update_text),
+                            primary = stringResource(R.string.action_download) to { openUrl(context, release.apkUrl ?: release.pageUrl) },
+                            secondary = stringResource(R.string.action_changelog) to { changelog = release.tag to release.notes },
+                        )
+                    }
+                }
+
+                val updates = state.sourcesWithUpdates
+                if (updates.isNotEmpty() && state.isActive) {
+                    item {
+                        ActionCard(
+                            icon = Icons.Filled.Notifications,
+                            title = stringResource(R.string.patch_updates_title),
+                            text = updates.joinToString { "${it.name} ${state.releases[it.id]?.getOrNull()?.version}" },
+                            primary = stringResource(R.string.action_update_all) to onUpdateAll,
+                            secondary = stringResource(R.string.nav_patches) to onOpenPatches,
+                        )
+                    }
+                }
+
+                if (state.missingScope.isNotEmpty()) {
+                    item {
+                        ActionCard(
+                            icon = Icons.Filled.Warning,
+                            title = stringResource(R.string.scope_missing_title),
+                            text = stringResource(R.string.scope_missing_text, state.missingScope.mapNotNull { state.apps[it] }.joinToString()),
+                            primary = stringResource(R.string.action_request) to onRequestScope,
+                        )
+                    }
+                }
+
+                item { SectionHeader(stringResource(R.string.apps_title)) }
+
+                val apps = state.apps.entries.sortedBy { it.value.lowercase() }
+                if (apps.isEmpty()) {
+                    item {
+                        ActionCard(
+                            title = stringResource(R.string.no_bundles_title),
+                            text = stringResource(R.string.no_bundles_text),
+                            primary = stringResource(R.string.action_browse_sources) to onOpenPatches,
+                        )
+                    }
+                }
+                items(apps, key = { it.key }) { (packageName, appName) ->
+                    val bundles = state.bundles.filter { it.enabled && packageName in it.apps }
+                    AppCard(
+                        appName = appName,
+                        packageName = packageName,
+                        appIconColor = bundles.firstNotNullOfOrNull { it.appIconColors[packageName] },
+                        recommendedVersion = bundles.firstNotNullOfOrNull { it.recommendedVersion(packageName) },
+                        inScope = packageName !in state.missingScope,
+                        onClick = { onOpenApp(packageName) },
                     )
                 }
-            }
-
-            if (state.missingScope.isNotEmpty()) {
-                item {
-                    ActionCard(
-                        icon = Icons.Filled.Warning,
-                        title = stringResource(R.string.scope_missing_title),
-                        text = stringResource(R.string.scope_missing_text, state.missingScope.mapNotNull { state.apps[it] }.joinToString()),
-                        primary = stringResource(R.string.action_request) to onRequestScope,
-                    )
-                }
-            }
-
-            item { SectionHeader(stringResource(R.string.apps_title)) }
-
-            val apps = state.apps.entries.sortedBy { it.value.lowercase() }
-            if (apps.isEmpty()) {
-                item {
-                    ActionCard(
-                        title = stringResource(R.string.no_bundles_title),
-                        text = stringResource(R.string.no_bundles_text),
-                        primary = stringResource(R.string.action_browse_sources) to onOpenPatches,
-                    )
-                }
-            }
-            items(apps, key = { it.key }) { (packageName, appName) ->
-                val bundles = state.bundles.filter { it.enabled && packageName in it.apps }
-                AppCard(
-                    appName = appName,
-                    packageName = packageName,
-                    appIconColor = bundles.firstNotNullOfOrNull { it.appIconColors[packageName] },
-                    recommendedVersion = bundles.firstNotNullOfOrNull { it.recommendedVersion(packageName) },
-                    inScope = packageName !in state.missingScope,
-                    onClick = { onOpenApp(packageName) },
-                )
             }
         }
     }
