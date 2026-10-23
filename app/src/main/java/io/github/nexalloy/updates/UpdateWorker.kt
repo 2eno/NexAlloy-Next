@@ -8,8 +8,11 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import io.github.nexalloy.guard.GuardPolicy
+import io.github.nexalloy.guard.PlayUpdateGuard
 import io.github.nexalloy.manager.SourceClient
 import io.github.nexalloy.manager.SourceStore
+import io.github.nexalloy.ui.screens.compareVersions
 import java.util.concurrent.TimeUnit
 
 /** Checks for updates of NexAlloy and of the installed patch sources in the background, and notifies about them. */
@@ -42,7 +45,30 @@ class UpdateWorker(context: Context, params: WorkerParameters) : CoroutineWorker
                 }
             if (updated.isNotEmpty()) UpdateNotifications.patchUpdates(context, updated)
         }
+
+        val guard = PlayUpdateGuard(context, settings)
+        runCatching { guard.reapply() }
+        if (settings.notifyPatchUpdates) notifyCompatibleVersions(context, settings, guard)
         return Result.success()
+    }
+
+    /** Tells about apps held back by the Play update lock whose patches now support a newer version. */
+    private fun notifyCompatibleVersions(context: Context, settings: AppSettings, guard: PlayUpdateGuard) {
+        val choices = settings.guardChoices
+        val apps = settings.recommendedVersions.mapNotNull { (packageName, recommended) ->
+            if (!GuardPolicy.wanted(choices[packageName], true, settings.guardByDefault)) return@mapNotNull null
+            if (!guard.status(packageName).locked) return@mapNotNull null
+            val installed = runCatching { context.packageManager.getPackageInfo(packageName, 0).versionName }.getOrNull()
+                ?: return@mapNotNull null
+            val key = "compatible_$packageName"
+            if (compareVersions(installed, recommended) >= 0 || settings.lastNotified(key) == recommended) return@mapNotNull null
+            settings.setLastNotified(key, recommended)
+            val label = runCatching {
+                context.packageManager.getApplicationLabel(context.packageManager.getApplicationInfo(packageName, 0)).toString()
+            }.getOrDefault(packageName)
+            "$label v$recommended"
+        }
+        if (apps.isNotEmpty()) UpdateNotifications.compatibleVersions(context, apps)
     }
 
     companion object {

@@ -21,6 +21,7 @@ import io.github.nexalloy.manager.SourceRelease
 import io.github.nexalloy.manager.SourceStore
 import io.github.nexalloy.patchPreferenceKey
 import io.github.nexalloy.updates.AppRelease
+import io.github.nexalloy.guard.PlayUpdateGuard
 import io.github.nexalloy.updates.AppSettings
 import io.github.nexalloy.updates.AppUpdateChecker
 import kotlinx.coroutines.Dispatchers
@@ -73,6 +74,7 @@ class ManagerViewModel(application: Application) : AndroidViewModel(application)
     private val context get() = getApplication<Application>()
     private val store = SourceStore(application)
     val settings = AppSettings(application)
+    private val guard = PlayUpdateGuard(application, settings)
 
     private val _state = MutableStateFlow(ManagerState(sources = store.all()))
     val state: StateFlow<ManagerState> = _state.asStateFlow()
@@ -118,6 +120,13 @@ class ManagerViewModel(application: Application) : AndroidViewModel(application)
                 bundles = manager?.let { runCatching { it.installed }.getOrNull() }.orEmpty(),
                 missingScope = manager?.let { runCatching { it.missingScope() }.getOrNull() }.orEmpty(),
             )
+        }
+        if (manager != null) {
+            // The background check and the Play update lock read these without the module's service.
+            settings.recommendedVersions = _state.value.bundles.filter { it.enabled }
+                .flatMap { bundle -> bundle.apps.keys.mapNotNull { pkg -> bundle.recommendedVersion(pkg)?.let { pkg to it } } }
+                .toMap()
+            viewModelScope.launch { runCatching { guard.reapply() } }
         }
     }
 
@@ -288,6 +297,25 @@ class ManagerViewModel(application: Application) : AndroidViewModel(application)
             editor.putBoolean(patchPreferenceKey(group.bundle.id, patch.name), defaults && patch.use)
         }
         editor.apply()
+    }
+
+    // endregion
+
+    // region Play update lock
+
+    /** Where [packageName] stands with the Play update lock. */
+    fun guardStatus(packageName: String) = guard.status(packageName)
+
+    /** Locks or releases [packageName], and tells the user how it went. */
+    suspend fun setGuard(packageName: String, locked: Boolean) {
+        settings.setGuardChoice(packageName, locked)
+        val result = if (locked) guard.lock(packageName) else guard.release(packageName)
+        val appName = _state.value.apps[packageName] ?: packageName
+        result.onSuccess {
+            message(if (locked) R.string.guard_locked_message else R.string.guard_released_message, appName)
+        }.onFailure {
+            message(R.string.guard_failed_message, appName, it.message.orEmpty())
+        }
     }
 
     // endregion

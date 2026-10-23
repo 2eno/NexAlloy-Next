@@ -19,6 +19,7 @@ object UpdateNotifications {
     private const val CHANNEL_PATCHES = "patch_updates"
     private const val ID_APP = 1
     private const val ID_PATCHES = 2
+    private const val ID_COMPATIBLE = 3
 
     fun createChannels(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
@@ -43,6 +44,14 @@ object UpdateNotifications {
         context.getString(R.string.notification_patch_update_title),
         sources.joinToString(),
         MainActivity.DESTINATION_PATCHES,
+    )
+
+    /** Apps whose Play updates are locked and whose patches now support a newer version. */
+    fun compatibleVersions(context: Context, apps: List<String>) = notify(
+        context, CHANNEL_PATCHES, ID_COMPATIBLE,
+        context.getString(R.string.notification_compatible_title),
+        apps.joinToString(),
+        MainActivity.DESTINATION_HOME,
     )
 
     private fun notify(context: Context, channel: String, id: Int, title: String, text: String, destination: String) {

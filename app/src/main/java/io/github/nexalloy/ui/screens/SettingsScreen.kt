@@ -51,6 +51,7 @@ fun SettingsScreen(viewModel: ManagerViewModel, outerPadding: PaddingValues) {
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     var notifyApp by remember { mutableStateOf(settings.notifyAppUpdates) }
     var notifyPatches by remember { mutableStateOf(settings.notifyPatchUpdates) }
+    var guardDefault by remember { mutableStateOf(settings.guardByDefault) }
     var iconHidden by remember { mutableStateOf(viewModel.launcherIconHidden) }
     var showLicenses by remember { mutableStateOf(false) }
     val transparent = ListItemDefaults.colors(containerColor = Color.Transparent)
@@ -88,6 +89,16 @@ fun SettingsScreen(viewModel: ManagerViewModel, outerPadding: PaddingValues) {
                     headlineContent = { Text(stringResource(R.string.check_for_update_title)) },
                     colors = transparent,
                     modifier = Modifier.clickable { viewModel.checkUpdates(userInitiated = true) },
+                )
+            }
+
+            item {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.setting_guard_default)) },
+                    supportingContent = { Text(stringResource(R.string.setting_guard_default_summary)) },
+                    trailingContent = { Switch(guardDefault, { guardDefault = it; settings.guardByDefault = it }) },
+                    colors = transparent,
+                    modifier = Modifier.clickable { guardDefault = !guardDefault; settings.guardByDefault = guardDefault },
                 )
             }
 

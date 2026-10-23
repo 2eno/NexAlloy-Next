@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -50,6 +51,7 @@ import io.github.nexalloy.core.R
 import io.github.nexalloy.patchPreferenceKey
 import io.github.nexalloy.ui.BundlePatches
 import io.github.nexalloy.ui.ManagerViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,6 +138,36 @@ fun AppPatchesScreen(viewModel: ManagerViewModel, packageName: String, navContro
                             ?: stringResource(R.string.recommended_any_version),
                         text = installed?.let { stringResource(R.string.installed_version, it) }
                             ?: stringResource(R.string.app_not_installed_short),
+                    )
+                }
+                item {
+                    var status by remember(packageName) { mutableStateOf(viewModel.guardStatus(packageName)) }
+                    var wanted by remember(packageName) { mutableStateOf(status.locked) }
+                    val scope = rememberCoroutineScope()
+                    fun toggle(value: Boolean) {
+                        wanted = value
+                        scope.launch {
+                            viewModel.setGuard(packageName, value)
+                            status = viewModel.guardStatus(packageName)
+                            wanted = status.locked
+                        }
+                    }
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.guard_title)) },
+                        supportingContent = {
+                            Text(
+                                stringResource(
+                                    when {
+                                        !status.installed -> R.string.guard_not_installed
+                                        status.locked -> R.string.guard_locked
+                                        else -> R.string.guard_unlocked
+                                    }
+                                )
+                            )
+                        },
+                        trailingContent = { Switch(checked = wanted, onCheckedChange = ::toggle, enabled = status.installed) },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        modifier = Modifier.clickable(enabled = status.installed) { toggle(!wanted) },
                     )
                 }
                 item {
