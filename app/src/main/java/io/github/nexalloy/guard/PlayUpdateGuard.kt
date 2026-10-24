@@ -47,8 +47,8 @@ class PlayUpdateGuard(private val context: Context, private val settings: AppSet
         runCatching {
             require(isValidPackageName(packageName)) { "Invalid package name $packageName" }
             if (!isInstalled(packageName)) throw IOException("$packageName is not installed")
-            val result = RootShell.run("pm set-installer $packageName $installer")
-            if (!result.isSuccess) throw IOException(result.output.ifEmpty { "pm set-installer failed (${result.exitCode})" })
+            val result = RootShell.runAsShell("pm set-installer $packageName $installer")
+            if (!result.isSuccess) throw IOException(shorten(result.output).ifEmpty { "pm set-installer failed (${result.exitCode})" })
             // Root worked, whatever the installer does next.
             settings.rootVerified = true
             val actual = installerOf(packageName)
@@ -86,6 +86,11 @@ class PlayUpdateGuard(private val context: Context, private val settings: AppSet
         const val PLAY_STORE = "com.android.vending"
 
         private val PACKAGE_NAME = Regex("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+")
+
+        /** The first lines of a command's output, without the stack trace Android prints for exceptions. */
+        fun shorten(output: String): String =
+            output.lineSequence().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("at ") }
+                .take(2).joinToString(" ").take(240)
 
         /** Package names go into a root shell command. */
         fun isValidPackageName(packageName: String) = PACKAGE_NAME.matches(packageName)

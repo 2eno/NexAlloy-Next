@@ -28,4 +28,14 @@ class PlayUpdateGuardTest {
         assertFalse(PlayUpdateGuard.isValidPackageName("nodots"))
         assertFalse(PlayUpdateGuard.isValidPackageName(""))
     }
+
+    @Test
+    fun shortensExceptions() {
+        val output = "Exception occurred while executing 'set-installer':\njava.lang.SecurityException: Unknown calling UID: 0\n  at com.android.server.pm.X.y(X.java:1)\n  at z"
+        assertEquals(
+            "Exception occurred while executing 'set-installer': java.lang.SecurityException: Unknown calling UID: 0",
+            PlayUpdateGuard.shorten(output),
+        )
+        assertEquals("", PlayUpdateGuard.shorten(""))
+    }
 }
