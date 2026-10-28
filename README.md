@@ -27,7 +27,7 @@ both notifications can be turned off in **Settings**.
 
 A new app version can break the patches. Open an app's patches and turn on **Block Play Store updates** to keep the
 Play Store from updating it by itself. This needs root: the Play Store only updates apps it installed, so the app
-sets NexAlloyNext as the installer of the app (`pm set-installer`). Apps whose bundle names a recommended version are
+sets the adb shell package as the installer (`pm set-installer`), which makes the app look sideloaded. Apps whose bundle names a recommended version are
 locked by default once root worked for one app (see **Settings**), and you are notified when the patches support a
 newer version. Turn the switch off to give the app back to the Play Store.
 

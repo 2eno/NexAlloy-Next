@@ -34,11 +34,15 @@ class PlayUpdateGuard(private val context: Context, private val settings: AppSet
     fun status(packageName: String): Status {
         val installed = isInstalled(packageName)
         val installer = if (installed) installerOf(packageName) else null
-        return Status(installed, installer, locked = installer == context.packageName)
+        return Status(installed, installer, locked = installed && installer != PLAY_STORE)
     }
 
-    /** Locks [packageName]. Fails with a readable message if root is missing or the installer did not change. */
-    suspend fun lock(packageName: String): Result<Unit> = setInstaller(packageName, context.packageName)
+    /**
+     * Locks [packageName] by setting the adb shell package as its installer, so it looks sideloaded and the Play
+     * Store does not update it by itself. NexAlloyNext's own package cannot be used: some ROMs require the caller
+     * (the shell user) to share a signature with the new installer, which only platform packages like the shell do.
+     */
+    suspend fun lock(packageName: String): Result<Unit> = setInstaller(packageName, SHELL_PACKAGE)
 
     /** Gives [packageName] back to the Play Store. */
     suspend fun release(packageName: String): Result<Unit> = setInstaller(packageName, PLAY_STORE)
@@ -84,6 +88,9 @@ class PlayUpdateGuard(private val context: Context, private val settings: AppSet
 
     companion object {
         const val PLAY_STORE = "com.android.vending"
+
+        /** The adb shell package, used as the installer of a locked app. Platform-signed, so the shell user can set it. */
+        const val SHELL_PACKAGE = "com.android.shell"
 
         private val PACKAGE_NAME = Regex("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+")
 
