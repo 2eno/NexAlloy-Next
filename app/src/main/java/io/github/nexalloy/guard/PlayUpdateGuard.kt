@@ -51,14 +51,18 @@ class PlayUpdateGuard(private val context: Context, private val settings: AppSet
         runCatching {
             require(isValidPackageName(packageName)) { "Invalid package name $packageName" }
             if (!isInstalled(packageName)) throw IOException("$packageName is not installed")
-            val result = RootShell.runAsShell("pm set-installer $packageName $installer")
-            if (!result.isSuccess) throw IOException(shorten(result.output).ifEmpty { "pm set-installer failed (${result.exitCode})" })
-            // Root worked, whatever the installer does next.
-            settings.rootVerified = true
-            val actual = installerOf(packageName)
-            if (actual != installer) {
-                throw IOException("The installer is still ${actual ?: "unknown"}, this Android does not allow changing it")
+            // The system user bypasses the installer signature checks; the shell user and root are fallbacks for
+            // devices where only one of them can be reached or changes the installer.
+            var firstError: String? = null
+            for (uid in PRIVILEGED_UIDS) {
+                val result = runCatching { RootShell.runAsUid(uid, "pm set-installer $packageName $installer") }
+                    .getOrElse { if (firstError == null) firstError = it.message; null } ?: continue
+                settings.rootVerified = true
+                if (result.isSuccess && installerOf(packageName) == installer) return@runCatching
+                val error = shorten(result.output).ifEmpty { "pm set-installer failed (${result.exitCode})" }
+                if (firstError == null) firstError = error
             }
+            throw IOException(firstError ?: "Could not run pm set-installer as root")
         }
     }
 
@@ -88,6 +92,9 @@ class PlayUpdateGuard(private val context: Context, private val settings: AppSet
 
     companion object {
         const val PLAY_STORE = "com.android.vending"
+
+        /** The users tried for pm set-installer, most likely to work first. */
+        val PRIVILEGED_UIDS = listOf(RootShell.SYSTEM_UID, RootShell.SHELL_UID, RootShell.ROOT_UID)
 
         /** The adb shell package, used as the installer of a locked app. Platform-signed, so the shell user can set it. */
         const val SHELL_PACKAGE = "com.android.shell"

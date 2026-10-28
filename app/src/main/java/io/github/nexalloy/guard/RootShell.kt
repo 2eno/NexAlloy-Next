@@ -1,55 +1,55 @@
 package io.github.nexalloy.guard
 
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
-/** Runs commands through `su`, as root or as the shell user. Blocking; call off the main thread. */
+/** Runs commands through `su` as a chosen user. Blocking; call off the main thread. */
 object RootShell {
     class Result(val exitCode: Int, val output: String) {
         val isSuccess get() = exitCode == 0
     }
 
-    /** The user of `adb shell` (uid 2000). Package manager commands reject root but accept it. */
+    const val ROOT_UID = 0
+
+    /** The system user. Package manager commands run as it bypass the installer signature checks. */
+    const val SYSTEM_UID = 1000
+
+    /** The user of `adb shell`. */
     const val SHELL_UID = 2000
 
-    /** A way to run a command as the shell user, by the arguments it passes `su` and what it writes to its stdin. */
-    private class ShellRunner(val args: (String) -> List<String>, val stdin: (String) -> String?)
+    /** A way to run a command as a user, by the arguments it passes `su` and what it writes to its stdin. */
+    private class Runner(val args: (String) -> List<String>, val stdin: (String) -> String?)
 
-    @Volatile private var shellRunner: ShellRunner? = null
-
-    // su implementations (Magisk, KernelSU, APatch, ...) differ in how they drop to another user, so each candidate
-    // is probed once and the first that actually reaches uid 2000 is kept.
-    private val candidates = listOf(
-        ShellRunner({ listOf("su", SHELL_UID.toString(), "-c", it) }, { null }),
-        ShellRunner({ listOf("su", "-c", it, SHELL_UID.toString()) }, { null }),
-        ShellRunner({ listOf("su", SHELL_UID.toString()) }, { it }),
-        ShellRunner({ listOf("su", "-u", SHELL_UID.toString(), "-c", it) }, { null }),
-        ShellRunner({ listOf("su", "-c", "setpriv --reuid=$SHELL_UID --regid=$SHELL_UID --clear-groups $it") }, { null }),
-    )
+    /** The working runner found for each user, so `su` is only probed once per user. */
+    private val runners = ConcurrentHashMap<Int, Runner>()
 
     /**
-     * Runs [command] as the shell user (uid 2000), like `adb shell` does. Package manager commands such as
-     * `pm set-installer` fail as root with "Unknown calling UID: 0" and are only accepted from the shell user.
+     * Runs [command] as the user [uid], like `adb shell` runs as the shell user. su implementations differ, so a
+     * way to reach [uid] is probed with `id -u` and cached.
      *
-     * @throws IOException if there is no `su`, the user denied root, or no way to become the shell user worked.
+     * @throws IOException if there is no `su`, the user denied root, or [uid] could not be reached.
      */
-    fun runAsShell(command: String, timeoutSeconds: Long = 20): Result {
-        val runner = shellRunner ?: detectShellRunner() ?: throw IOException(
-            "Root works, but running as the shell user (uid 2000) failed. Allow it in your root manager."
-        )
-        shellRunner = runner
+    fun runAsUid(uid: Int, command: String, timeoutSeconds: Long = 20): Result {
+        val runner = runners[uid] ?: detect(uid)?.also { runners[uid] = it }
+            ?: throw IOException("Root works, but running as uid $uid failed. Allow it in your root manager.")
         return exec(runner.args(command), runner.stdin(command), timeoutSeconds)
     }
 
-    /** Runs [command] as root. */
-    fun run(command: String, timeoutSeconds: Long = 20): Result =
-        exec(listOf("su", "-c", command), null, timeoutSeconds)
+    // su implementations (Magisk, KernelSU, APatch, ...) differ in how they drop to another user.
+    private fun candidates(uid: Int) = listOf(
+        Runner({ listOf("su", uid.toString(), "-c", it) }, { null }),
+        Runner({ listOf("su", "-c", it, uid.toString()) }, { null }),
+        Runner({ listOf("su", uid.toString()) }, { it }),
+        Runner({ listOf("su", "-u", uid.toString(), "-c", it) }, { null }),
+        Runner({ listOf("su", "-c", "setpriv --reuid=$uid --regid=$uid --clear-groups $it") }, { null }),
+    )
 
-    /** The first candidate whose `id -u` is 2000, or null if none can reach the shell user. */
-    private fun detectShellRunner(): ShellRunner? = candidates.firstOrNull { runner ->
+    /** The first candidate whose `id -u` is [uid], or null if [uid] cannot be reached. */
+    private fun detect(uid: Int): Runner? = candidates(uid).firstOrNull { runner ->
         runCatching {
             val result = exec(runner.args("id -u"), runner.stdin("id -u"), 10)
-            result.isSuccess && result.output.lineSequence().any { it.trim() == SHELL_UID.toString() }
+            result.isSuccess && result.output.lineSequence().any { it.trim() == uid.toString() }
         }.getOrDefault(false)
     }
 
