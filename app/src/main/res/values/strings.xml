@@ -92,11 +92,13 @@
     <string name="guard_title">Block Play Store updates</string>
     <string name="guard_not_installed">The app is not installed.</string>
     <string name="guard_locked">Locked: the Play Store does not update this app by itself. Update it when the patches support a newer version.</string>
-    <string name="guard_unlocked">The Play Store may update this app by itself. Locking needs root.</string>
+    <string name="guard_unlocked">The Play Store may update this app by itself. Locking needs root and reinstalls the app from its own APK, which restarts it; its data stays.</string>
     <string name="guard_locked_message">%1$s: Play Store updates are blocked</string>
     <string name="guard_released_message">%1$s: Play Store updates are allowed again</string>
+    <string name="guard_update_pending">The patches support v%1$s: the Play Store may update the app to it, then it is locked again.</string>
+    <string name="guard_update_allowed_message">%1$s: the Play Store may update to v%2$s, then the app is locked again</string>
     <string name="guard_failed_message">%1$s: %2$s</string>
     <string name="setting_guard_default">Block Play updates by default</string>
     <string name="setting_guard_default_summary">Locks apps whose patches name a recommended version, once root worked for one app. Per app in its patches.</string>
-    <string name="notification_compatible_title">Patches support a newer app version</string>
+    <string name="notification_compatible_title">Patches support a newer version, the Play Store may update</string>
 </resources>

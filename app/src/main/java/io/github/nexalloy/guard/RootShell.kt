@@ -12,9 +12,6 @@ object RootShell {
 
     const val ROOT_UID = 0
 
-    /** The system user. Package manager commands run as it bypass the installer signature checks. */
-    const val SYSTEM_UID = 1000
-
     /** The user of `adb shell`. */
     const val SHELL_UID = 2000
 

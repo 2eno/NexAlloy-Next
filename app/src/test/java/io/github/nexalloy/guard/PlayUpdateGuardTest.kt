@@ -38,4 +38,30 @@ class PlayUpdateGuardTest {
         )
         assertEquals("", PlayUpdateGuard.shorten(""))
     }
+
+    @Test
+    fun reinstallCommand() {
+        val command = PlayUpdateGuard.reinstallCommand(
+            listOf("/data/app/~~a==/com.example-b==/base.apk", "/data/app/~~a==/com.example-b==/split_config.arm64_v8a.apk"),
+            "com.android.shell",
+        )
+        assertEquals(
+            "rm -rf /data/local/tmp/nexalloy-lock; mkdir -p /data/local/tmp/nexalloy-lock || exit 1; " +
+                "trap 'rm -rf /data/local/tmp/nexalloy-lock' EXIT; " +
+                "cp '/data/app/~~a==/com.example-b==/base.apk' /data/local/tmp/nexalloy-lock/0.apk && " +
+                "cp '/data/app/~~a==/com.example-b==/split_config.arm64_v8a.apk' /data/local/tmp/nexalloy-lock/1.apk || exit 1; " +
+                "pm install -r -i com.android.shell /data/local/tmp/nexalloy-lock/0.apk /data/local/tmp/nexalloy-lock/1.apk",
+            command,
+        )
+        assertEquals("Failure [INSTALL_FAILED_X: y]", PlayUpdateGuard.shorten("Failure [INSTALL_FAILED_X: y]"))
+    }
+
+    @Test
+    fun updatesToSupportedVersions() {
+        // The patches support a newer version: the Play Store may update.
+        assertTrue(GuardPolicy.updateSupported("446.0.0.1.1", "447.0.0.55.81"))
+        // Installed is the recommended version, or newer than tested: stay locked.
+        assertFalse(GuardPolicy.updateSupported("447.0.0.55.81", "447.0.0.55.81"))
+        assertFalse(GuardPolicy.updateSupported("2026.43.1", "2026.41.0"))
+    }
 }

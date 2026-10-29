@@ -26,14 +26,15 @@ both notifications can be turned off in **Settings**.
 ### Blocking Play Store updates
 
 A new app version can break the patches. Open an app's patches and turn on **Block Play Store updates** to keep the
-Play Store from updating it by itself. This needs root: the Play Store only updates apps it installed, so the app
-sets the adb shell package as the installer (`pm set-installer`), which makes the app look sideloaded. Apps whose bundle names a recommended version are
-locked by default once root worked for one app (see **Settings**), and you are notified when the patches support a
-newer version. Turn the switch off to give the app back to the Play Store.
+Play Store from updating it by itself. The Play Store only updates apps it installed, so NexAlloyNext reinstalls the
+app from its own APK with the adb shell as its installer (`pm install -r -i`, as the shell user through root). The
+app restarts, its data and its place in the module scope stay. Apps whose bundle names a recommended version are
+locked by default once root worked for one app (see **Settings**). Turn the switch off to reinstall the app with the
+Play Store as its installer again.
 
-Not every Android version lets the installer be changed, and the Play Store may still show a manual update, so
-the switch tells you if it did not work. A reinstall from the Play Store resets the lock, and NexAlloyNext locks the
-app again in its background check.
+Once a patch update recommends a newer version than the installed one, NexAlloyNext gives the app back to the Play
+Store, so it updates the app, notifies you, and locks the app again in its next check after the update. The Play
+Store installs its latest version, which can be newer than the recommended one. The app card then says untested.
 
 ### Patch sources
 

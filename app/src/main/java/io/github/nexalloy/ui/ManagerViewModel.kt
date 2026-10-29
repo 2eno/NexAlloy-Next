@@ -306,13 +306,23 @@ class ManagerViewModel(application: Application) : AndroidViewModel(application)
     /** Where [packageName] stands with the Play update lock. */
     fun guardStatus(packageName: String) = guard.status(packageName)
 
+    /** Whether the user wants [packageName] locked. */
+    fun guardWanted(packageName: String) = guard.wanted(packageName)
+
+    /** The newer version the patches support for [packageName], which the Play Store may install first. */
+    fun guardPendingVersion(packageName: String) = guard.supportedNewerVersion(packageName)
+
     /** Locks or releases [packageName], and tells the user how it went. */
     suspend fun setGuard(packageName: String, locked: Boolean) {
         settings.setGuardChoice(packageName, locked)
-        val result = if (locked) guard.lock(packageName) else guard.release(packageName)
         val appName = _state.value.apps[packageName] ?: packageName
-        result.onSuccess {
-            message(if (locked) R.string.guard_locked_message else R.string.guard_released_message, appName)
+        guard.apply(packageName).onSuccess {
+            val pending = guard.supportedNewerVersion(packageName)
+            when {
+                !locked -> message(R.string.guard_released_message, appName)
+                pending != null -> message(R.string.guard_update_allowed_message, appName, pending)
+                else -> message(R.string.guard_locked_message, appName)
+            }
         }.onFailure {
             message(R.string.guard_failed_message, appName, it.message.orEmpty())
         }

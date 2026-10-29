@@ -142,27 +142,30 @@ fun AppPatchesScreen(viewModel: ManagerViewModel, packageName: String, navContro
                 }
                 item {
                     var status by remember(packageName) { mutableStateOf(viewModel.guardStatus(packageName)) }
-                    var wanted by remember(packageName) { mutableStateOf(status.locked) }
+                    var wanted by remember(packageName) { mutableStateOf(viewModel.guardWanted(packageName)) }
+                    var pending by remember(packageName) { mutableStateOf(viewModel.guardPendingVersion(packageName)) }
                     val scope = rememberCoroutineScope()
                     fun toggle(value: Boolean) {
                         wanted = value
                         scope.launch {
                             viewModel.setGuard(packageName, value)
                             status = viewModel.guardStatus(packageName)
-                            wanted = status.locked
+                            wanted = viewModel.guardWanted(packageName)
+                            pending = viewModel.guardPendingVersion(packageName)
                         }
                     }
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.guard_title)) },
                         supportingContent = {
+                            val version = pending
                             Text(
-                                stringResource(
-                                    when {
-                                        !status.installed -> R.string.guard_not_installed
-                                        status.locked -> R.string.guard_locked
-                                        else -> R.string.guard_unlocked
-                                    }
-                                )
+                                when {
+                                    !status.installed -> stringResource(R.string.guard_not_installed)
+                                    wanted && version != null && !status.locked ->
+                                        stringResource(R.string.guard_update_pending, version)
+                                    status.locked -> stringResource(R.string.guard_locked)
+                                    else -> stringResource(R.string.guard_unlocked)
+                                }
                             )
                         },
                         trailingContent = { Switch(checked = wanted, onCheckedChange = ::toggle, enabled = status.installed) },
